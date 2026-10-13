@@ -1,0 +1,171 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Sign In | Campus Equipment System</title>
+
+    <link rel="stylesheet"
+          href="{% static 'css/auth.css' %}">
+</head>
+
+<body>
+
+<div class="login-layout">
+
+    <!-- LEFT PANEL -->
+
+<section class="brand-panel">
+    <div class="brand-content">
+
+        <div class="brand-logo">
+            <svg width="40" height="40"
+                 viewBox="0 0 48 48"
+                 fill="none"
+                 xmlns="http://www.w3.org/2000/svg"
+                 aria-hidden="true">
+                <path d="M24 3L43 14V34L24 45L5 34V14L24 3Z"
+                      fill="white"/>
+                <path d="M24 9L37 16.5L24 24L11 16.5L24 9Z"
+                      fill="#60A5FA"/>
+                <path d="M11 21L21 27V39L11 33V21Z"
+                      fill="#1D4ED8"/>
+                <path d="M27 27L37 21V33L27 39V27Z"
+                      fill="#2563EB"/>
+            </svg>
+        </div>
+
+        <h1>
+            Campus Equipment<br>
+            Borrowing &<br>
+            Inventory System
+        </h1>
+
+        <p>
+            Borrow smarter.<br>
+            Manage equipment efficiently.
+        </p>
+
+    </div>
+
+    
+</section>
+
+    <!-- RIGHT PANEL -->
+    <section class="form-panel">
+
+        <div class="login-card">
+
+            <h2>Sign in</h2>
+
+            <p class="subtitle">
+                Use your account to continue.
+            </p>
+
+            <!-- ERROR MESSAGE -->
+            {% if form.errors %}
+                <div class="error-message" role="alert">
+                    {% for error in form.non_field_errors %}{{ error }} {% empty %}Please check your username and password.{% endfor %}
+                </div>
+            {% endif %}
+
+            <!-- LOGIN FORM -->
+            <form method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                <!-- USERNAME LABEL -->
+                <label for="username">Username</label>
+
+                <div class="input-wrapper">
+
+                    <!-- GRAY USER ICON -->
+                    <svg class="input-icon"
+                         xmlns="http://www.w3.org/2000/svg"
+                         width="18"
+                         height="18"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.7"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <circle cx="12" cy="8" r="4"/>
+                        <path d="M4 21a8 8 0 0 1 16 0"/>
+                    </svg>
+
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        value="{{ form.username.value|default:'' }}"
+                        placeholder="Enter your username"
+                        autocomplete="username"
+                        required
+                        autofocus
+                    >
+                </div>
+
+                <!-- PASSWORD -->
+                <div class="password-header">
+
+                    <label for="password">
+                        Password
+                    </label>
+
+                </div>
+
+                <div class="input-wrapper">
+
+                    <!-- GRAY LOCK ICON -->
+                    <svg class="input-icon"
+                         xmlns="http://www.w3.org/2000/svg"
+                         width="18"
+                         height="18"
+                         viewBox="0 0 24 24"
+                         fill="none"
+                         stroke="currentColor"
+                         stroke-width="1.7"
+                         stroke-linecap="round"
+                         stroke-linejoin="round"
+                         aria-hidden="true">
+                        <rect x="4" y="11"
+                              width="16" height="10"
+                              rx="2"/>
+                        <path d="M8 11V7a4 4 0 0 1 8 0v4"/>
+                    </svg>
+
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
+                        placeholder="Enter your password"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+
+                <!-- SIGN IN BUTTON -->
+                <button type="submit" class="signin-btn">
+                    Sign in
+                </button>
+
+<p class="signin-text">
+    Don't have an account?
+    <a href="{% url 'register' %}">Register here</a>
+</p>
+
+
+            </form>
+
+        </div>
+    </section>
+</div>
+
+</body>
+</html>

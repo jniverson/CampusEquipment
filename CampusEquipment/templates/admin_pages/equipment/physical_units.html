@@ -1,0 +1,560 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/equipment.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="equipment-header">
+    <h1>Equipment Catalog & Physical Units</h1>
+    <p>Manage categories and catalog items, view unit details.</p>
+</div>
+
+<!-- NAVIGATION TABS -->
+<div class="equipment-tabs">
+
+    <a href="{% url 'categories_preview' %}"
+       class="equipment-tab">
+        Categories
+    </a>
+
+    <a href="{% url 'catalog_items_preview' %}"
+       class="equipment-tab">
+        Catalog Items
+    </a>
+
+    <a href="{% url 'physical_units_preview' %}"
+       class="equipment-tab active">
+        Physical Units
+    </a>
+
+</div>
+
+<!-- MAIN CARD -->
+<section class="equipment-card" id="units-table">
+
+    <div class="equipment-card-header">
+        <h2>Physical Units</h2>
+
+        <a href="#register-unit"
+           class="category-add-btn">
+            + Register Unit
+        </a>
+    </div>
+
+    <!-- FILTERS -->
+    <form method="get" class="catalog-filters">
+
+        <!-- CATEGORY FILTER -->
+        <div class="catalog-filter-field">
+            <label for="unit-category">Category</label>
+
+            <select id="unit-category" name="category">
+                <option value="all"
+                    {% if selected_category == 'all' %}selected{% endif %}>
+                    All Categories
+                </option>
+
+                {% for category in categories %}
+                <option value="{{ category.id }}"
+                    {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- ITEM FILTER -->
+        <div class="catalog-filter-field">
+            <label for="unit-item">Item</label>
+
+            <select id="unit-item" name="item">
+                <option value="all"
+                    {% if selected_item == 'all' %}selected{% endif %}>
+                    All Items
+                </option>
+
+                {% for item in catalog_items %}
+                <option value="{{ item.id }}"
+                    {% if selected_item == item.id|stringformat:"s" %}selected{% endif %}>
+                    {{ item.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- STATUS FILTER -->
+        <div class="catalog-filter-field">
+            <label for="unit-status">Status</label>
+
+            <select id="unit-status" name="status">
+                <option value="all"
+                    {% if status_filter == 'all' %}selected{% endif %}>
+                    All Status
+                </option>
+
+                {% for status in inventory_statuses %}
+                <option value="{{ status }}"
+                    {% if status_filter == status %}selected{% endif %}>
+                    {{ status }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <button type="submit"
+                class="category-filter-btn">
+            Apply
+        </button>
+
+    </form>
+
+    <!-- PHYSICAL UNITS TABLE -->
+    <div class="equipment-table-wrapper">
+
+        <table class="equipment-table units-table">
+
+            <thead>
+                <tr>
+                    <th>Asset Code</th>
+                    <th>Item</th>
+                    <th>Condition</th>
+                    <th>Acquired</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+
+                {% for unit in units %}
+
+                <tr>
+
+                    <!-- ASSET CODE -->
+                    <td>
+                        <strong>{{ unit.asset_code }}</strong>
+                    </td>
+
+                    <!-- ITEM -->
+                    <td>{{ unit.item_name }}</td>
+
+                    <!-- CONDITION -->
+                    <td>{{ unit.condition }}</td>
+
+                    <!-- ACQUISITION DATE -->
+                    <td>{{ unit.acquired }}</td>
+
+                    <!-- STATUS
+                         "Available" becomes unit-available, "Issued" becomes unit-issued, etc. -->
+                    <td>
+                        <span class="unit-status unit-{{ unit.status|lower }}">
+                            <span class="unit-status-dot"></span>
+                            {{ unit.status }}
+                        </span>
+                    </td>
+
+                    <!-- ACTIONS -->
+                    <td>
+                        <div class="category-actions">
+
+                            <a href="#view-unit-{{ unit.id }}"
+                               class="category-action-btn">
+                                View
+                            </a>
+
+                            <a href="#edit-unit-{{ unit.id }}"
+                               class="category-action-btn">
+                                Edit
+                            </a>
+
+                        </div>
+                    </td>
+
+                </tr>
+
+                {% empty %}
+
+                {% include 'components/empty_row.html' with colspan="6" title="No physical units found." hint="Try adjusting your filters." %}
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
+
+
+<!-- ==========================================
+     REGISTER PHYSICAL UNIT MODAL
+========================================== -->
+
+<div id="register-unit"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal unit-modal"
+         role="dialog"
+         aria-labelledby="register-unit-title">
+
+        <div class="equipment-modal-header">
+
+            <h2 id="register-unit-title">
+                Register Physical Unit
+            </h2>
+
+            <a href="#units-table"
+               class="modal-close"
+               aria-label="Close">
+                &times;
+            </a>
+
+        </div>
+
+        <p class="modal-subtitle">
+            Register a new individual equipment asset.
+        </p>
+        <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="unit_register">
+
+
+        <div class="category-form">
+
+            <!-- ASSET CODE -->
+            <label for="new-asset-code">
+                Asset Code (Unique) *
+            </label>
+
+            <input type="text"
+                   id="new-asset-code"
+                   name="asset_code"
+                   placeholder="e.g., PRJ-004"
+                   maxlength="50"
+                   required>
+
+            <!-- CATALOG ITEM -->
+            <label for="new-unit-item">
+                Catalog Item *
+            </label>
+
+            <select id="new-unit-item"
+                    name="catalog_item"
+                    required>
+
+                <option value="">
+                    Select catalog item
+                </option>
+
+                {% for item in catalog_items %}
+
+                    {% if item.is_active %}
+
+                    <option value="{{ item.id }}">
+                        {{ item.name }}
+                    </option>
+
+                    {% endif %}
+
+                {% endfor %}
+
+            </select>
+
+            <!-- CONDITION -->
+            <label for="new-unit-condition">
+                Condition *
+            </label>
+
+            <select id="new-unit-condition"
+                    name="condition"
+                    required>
+
+                <option value="New">New</option>
+                <option value="Good">Good</option>
+                <option value="Fair">Fair</option>
+
+            </select>
+
+            <!-- ACQUISITION DATE -->
+            <label for="new-unit-acquired">
+                Acquisition Date *
+            </label>
+
+            <input type="date"
+                   id="new-unit-acquired"
+                   name="acquisition_date"
+                   required>
+
+            <!-- INITIAL STATUS -->
+            <label>Initial Status</label>
+
+            <div class="unit-initial-status">
+
+                <span class="unit-status unit-available">
+                    <span class="unit-status-dot"></span>
+                    Available
+                </span>
+
+                <small>
+                    New serviceable units start as Available.
+                </small>
+
+            </div>
+
+        </div>
+
+        <div class="equipment-modal-actions">
+
+            <a href="#units-table"
+               class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="modal-save">
+                Register Unit
+            </button>
+
+        </div>
+        </form>
+
+    </div>
+</div>
+
+
+<!-- ==========================================
+     VIEW AND EDIT PHYSICAL UNIT MODALS
+========================================== -->
+
+{% for unit in units %}
+
+
+<!-- ==========================================
+     VIEW PHYSICAL UNIT MODAL
+========================================== -->
+
+<div id="view-unit-{{ unit.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal unit-modal"
+         role="dialog"
+         aria-labelledby="view-unit-title-{{ unit.id }}">
+
+        <div class="equipment-modal-header">
+
+            <h2 id="view-unit-title-{{ unit.id }}">
+                Physical Unit Details
+            </h2>
+
+            <a href="#units-table"
+               class="modal-close"
+               aria-label="Close">
+                &times;
+            </a>
+
+        </div>
+
+        <div class="catalog-details">
+
+            <!-- ASSET CODE -->
+            <div class="detail-row">
+                <span>Asset Code</span>
+                <strong>{{ unit.asset_code }}</strong>
+            </div>
+
+            <!-- CATALOG ITEM -->
+            <div class="detail-row">
+                <span>Catalog Item</span>
+                <strong>{{ unit.item_name }}</strong>
+            </div>
+
+            <!-- CATEGORY -->
+            <div class="detail-row">
+                <span>Category</span>
+                <strong>{{ unit.category_name }}</strong>
+            </div>
+
+            <!-- CONDITION -->
+            <div class="detail-row">
+                <span>Condition</span>
+                <strong>{{ unit.condition }}</strong>
+            </div>
+
+            <!-- ACQUISITION DATE -->
+            <div class="detail-row">
+                <span>Acquisition Date</span>
+                <strong>{{ unit.acquired }}</strong>
+            </div>
+
+            <!-- INVENTORY STATUS -->
+            <div class="detail-row">
+
+                <span>Inventory Status</span>
+
+                <div>
+                    <span class="unit-status unit-{{ unit.status|lower }}">
+                        <span class="unit-status-dot"></span>
+                        {{ unit.status }}
+                    </span>
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="equipment-modal-actions">
+
+            <a href="#units-table"
+               class="modal-cancel">
+                Close
+            </a>
+
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ==========================================
+     EDIT PHYSICAL UNIT MODAL
+========================================== -->
+
+<div id="edit-unit-{{ unit.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal unit-modal"
+         role="dialog"
+         aria-labelledby="edit-unit-title-{{ unit.id }}">
+
+        <div class="equipment-modal-header">
+
+            <h2 id="edit-unit-title-{{ unit.id }}">
+                Edit Physical Unit
+            </h2>
+
+            <a href="#units-table"
+               class="modal-close"
+               aria-label="Close">
+                &times;
+            </a>
+
+        </div>
+
+        <p class="modal-subtitle">
+            Update asset information.
+        </p>
+        <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="unit_update">
+            <input type="hidden" name="unit_id" value="{{ unit.id }}">
+
+
+        <div class="category-form">
+
+            <!-- ASSET CODE -->
+            <label for="edit-code-{{ unit.id }}">
+                Asset Code
+            </label>
+
+            <input type="text"
+                   id="edit-code-{{ unit.id }}"
+                   name="asset_code"
+                   value="{{ unit.asset_code }}"
+                   readonly>
+
+            <!-- CATALOG ITEM -->
+            <label for="edit-item-{{ unit.id }}">
+                Catalog Item
+            </label>
+
+            <input type="text"
+                   id="edit-item-{{ unit.id }}"
+                   name="catalog_item"
+                   value="{{ unit.item_name }}"
+                   readonly>
+
+            <!-- CONDITION -->
+            <label for="edit-condition-{{ unit.id }}">
+                Condition
+            </label>
+
+            <select id="edit-condition-{{ unit.id }}"
+                   name="condition">
+
+                <option value="New"
+                    {% if unit.condition == 'New' %}selected{% endif %}>
+                    New
+                </option>
+
+                <option value="Good"
+                    {% if unit.condition == 'Good' %}selected{% endif %}>
+                    Good
+                </option>
+
+                <option value="Fair"
+                    {% if unit.condition == 'Fair' %}selected{% endif %}>
+                    Fair
+                </option>
+
+                <option value="Damaged"
+                    {% if unit.condition == 'Damaged' %}selected{% endif %}>
+                    Damaged
+                </option>
+
+            </select>
+
+            <!-- ACQUISITION DATE -->
+            <label for="edit-acquired-{{ unit.id }}">
+                Acquisition Date
+            </label>
+
+            <input type="date"
+                   id="edit-acquired-{{ unit.id }}"
+                   name="acquisition_date"
+                   value="{{ unit.acquired_iso }}">
+
+            <!-- CURRENT INVENTORY STATUS -->
+            <label>Current Inventory Status</label>
+
+            <div class="unit-initial-status">
+
+                <span class="unit-status unit-{{ unit.status|lower }}">
+                    <span class="unit-status-dot"></span>
+                    {{ unit.status }}
+                </span>
+
+
+
+            </div>
+
+        </div>
+
+        <div class="equipment-modal-actions">
+
+            <a href="#units-table"
+               class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="modal-save"
+                    >
+                Save Changes
+            </button>
+
+        </div>
+        </form>
+
+
+
+    </div>
+</div>
+
+{% endfor %}
+
+{% endblock %}

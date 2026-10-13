@@ -1,0 +1,502 @@
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/equipment.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+
+<div class="equipment-header">
+    <h1>Equipment Catalog & Physical Units</h1>
+    <p>Manage categories and catalog items, view unit details.</p>
+</div>
+
+<!-- TABS -->
+<div class="equipment-tabs">
+    <a href="{% url 'categories_preview' %}"
+       class="equipment-tab active">
+        Categories
+    </a>
+
+    <a href="{% url 'catalog_items_preview' %}"
+       class="equipment-tab">
+        Catalog Items
+    </a>
+
+    <a href="{% url 'physical_units_preview' %}"
+       class="equipment-tab">
+        Physical Units
+    </a>
+</div>
+
+<!-- MAIN CARD -->
+<section class="equipment-card" id="categories-table">
+
+    <div class="equipment-card-header">
+        <h2>Categories</h2>
+
+        <a href="#add-category" class="category-add-btn">
+            + Add category
+        </a>
+    </div>
+
+    <!-- STATUS FILTER -->
+    <form method="get" class="category-filter">
+        <label for="category-status">Status</label>
+
+        <select id="category-status" name="status">
+            <option value="all"
+                {% if status_filter == 'all' %}selected{% endif %}>
+                All Status
+            </option>
+
+            <option value="active"
+                {% if status_filter == 'active' %}selected{% endif %}>
+                Active
+            </option>
+
+            <option value="archived"
+                {% if status_filter == 'archived' %}selected{% endif %}>
+                Archived
+            </option>
+        </select>
+
+        <button type="submit" class="category-filter-btn">
+            Apply
+        </button>
+    </form>
+
+    <!-- CATEGORIES TABLE -->
+    <div class="equipment-table-wrapper">
+        <table class="equipment-table">
+
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for category in categories %}
+
+                <tr>
+                    <!-- CATEGORY NAME -->
+                    <td>{{ category.name }}</td>
+
+                    <!-- STATUS -->
+                    <td>
+                        {% if category.is_active %}
+
+                        {% include 'components/status_badge.html' with status="Active" %}
+
+                        {% else %}
+
+                        {% include 'components/status_badge.html' with status="Archived" %}
+
+                        {% endif %}
+                    </td>
+
+                    <!-- ACTIONS -->
+                    <td>
+                        <div class="category-actions">
+
+                            <!-- VIEW -->
+                            <a href="#view-{{ category.id }}"
+                               class="category-action-btn">
+                                View
+                            </a>
+
+                            {% if category.is_active %}
+
+                            <!-- EDIT -->
+                            <a href="#edit-{{ category.id }}"
+                               class="category-action-btn">
+                                Edit
+                            </a>
+
+                            <!-- ARCHIVE -->
+                            <a href="#archive-{{ category.id }}"
+                               class="category-action-btn archive-action">
+                                Archive
+                            </a>
+
+                            {% else %}
+
+                            <!-- RESTORE -->
+                            <a href="#restore-{{ category.id }}"
+                               class="category-action-btn restore-action">
+                                Restore
+                            </a>
+
+                            {% endif %}
+
+                        </div>
+                    </td>
+                </tr>
+
+                {% empty %}
+
+                {% include 'components/empty_row.html' with colspan="3" title="No categories found for this filter." %}
+
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+</section>
+
+
+<!-- =========================================
+     ADD CATEGORY MODAL
+========================================= -->
+
+<div id="add-category" class="equipment-modal-overlay">
+
+    <div class="equipment-modal"
+         role="dialog"
+         aria-labelledby="add-category-title">
+
+        <div class="equipment-modal-header">
+
+            <h2 id="add-category-title">
+                Add Category
+            </h2>
+
+            <a href="#categories-table"
+               class="modal-close"
+               aria-label="Close">
+                &times;
+            </a>
+
+        </div>
+
+        <p class="modal-subtitle">
+            Create a new equipment category.
+        </p>
+        <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="category_create">
+
+
+        <div class="category-form">
+
+            <label for="new-category-name">
+                Category Name
+            </label>
+
+            <input type="text"
+                   id="new-category-name"
+                   name="name"
+                   placeholder="e.g., Sports Equipment"
+                   maxlength="100"
+                   required>
+
+        </div>
+
+        <div class="equipment-modal-actions">
+
+            <a href="#categories-table"
+               class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="modal-save">
+                Save
+            </button>
+
+        </div>
+        </form>
+
+    </div>
+</div>
+
+
+<!-- =========================================
+     CATEGORY-SPECIFIC MODALS
+========================================= -->
+
+{% for category in categories %}
+
+
+<!-- =========================================
+     VIEW CATEGORY MODAL
+========================================= -->
+
+<div id="view-{{ category.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal"
+         role="dialog"
+         aria-labelledby="view-title-{{ category.id }}">
+
+        <div class="equipment-modal-header">
+
+            <h2 id="view-title-{{ category.id }}">
+                Category Details
+            </h2>
+
+            <a href="#categories-table"
+               class="modal-close"
+               aria-label="Close">
+                &times;
+            </a>
+
+        </div>
+
+        <div class="category-detail">
+
+            <label>Category Name</label>
+            <p>{{ category.name }}</p>
+
+            <label>Status</label>
+            <p>
+                {% if category.is_active %}
+                    Active
+                {% else %}
+                    Archived
+                {% endif %}
+            </p>
+
+            <label>Catalog Items</label>
+            <p>{{ category.item_count }}</p>
+
+        </div>
+
+        <div class="equipment-modal-actions">
+
+            <a href="#categories-table"
+               class="modal-cancel">
+                Close
+            </a>
+
+        </div>
+    </div>
+</div>
+
+
+{% if category.is_active %}
+
+
+<!-- =========================================
+     EDIT CATEGORY MODAL
+========================================= -->
+
+<div id="edit-{{ category.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal"
+         role="dialog"
+         aria-labelledby="edit-title-{{ category.id }}">
+
+        <div class="equipment-modal-header">
+
+            <h2 id="edit-title-{{ category.id }}">
+                Edit Category
+            </h2>
+
+            <a href="#categories-table"
+               class="modal-close"
+               aria-label="Close">
+                &times;
+            </a>
+
+        </div>
+
+        <p class="modal-subtitle">
+            Update category information.
+        </p>
+        <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="category_update">
+            <input type="hidden" name="category_id" value="{{ category.id }}">
+
+
+        <div class="category-form">
+
+            <label for="edit-name-{{ category.id }}">
+                Category Name
+            </label>
+
+            <input type="text"
+                   id="edit-name-{{ category.id }}"
+                   name="name"
+                   value="{{ category.name }}"
+                   maxlength="100">
+
+        </div>
+
+        <div class="equipment-modal-actions">
+
+            <a href="#categories-table"
+               class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="modal-save">
+                Save Changes
+            </button>
+
+        </div>
+        </form>
+
+
+
+    </div>
+</div>
+
+
+<!-- =========================================
+     ARCHIVE CATEGORY MODAL
+========================================= -->
+
+<div id="archive-{{ category.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal"
+         role="dialog"
+         aria-labelledby="archive-title-{{ category.id }}">
+
+        <!-- WARNING ICON -->
+        <div class="modal-warning-icon">
+
+            <svg viewBox="0 0 24 24"
+                 width="24"
+                 height="24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 aria-hidden="true">
+
+                <path d="M12 3 2 20h20L12 3Z"/>
+                <path d="M12 9v5M12 17h.01"/>
+
+            </svg>
+
+        </div>
+
+        <h2 id="archive-title-{{ category.id }}">
+            Archive Category?
+        </h2>
+
+        <p class="modal-description">
+            Are you sure you want to archive
+            <strong>{{ category.name }}</strong>?
+
+            The category will be hidden from active
+            selections while existing records and
+            transaction history are retained.
+        </p>
+
+                <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="category_archive">
+            <input type="hidden" name="category_id" value="{{ category.id }}">
+
+<div class="equipment-modal-actions">
+
+            <a href="#categories-table"
+               class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="modal-archive">
+                Archive
+            </button>
+
+        </div>
+        </form>
+
+
+    </div>
+</div>
+
+
+{% else %}
+
+
+<!-- =========================================
+     RESTORE CATEGORY MODAL
+========================================= -->
+
+<div id="restore-{{ category.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal"
+         role="dialog"
+         aria-labelledby="restore-title-{{ category.id }}">
+
+        <!-- RESTORE ICON -->
+        <div class="modal-restore-icon">
+
+            <svg viewBox="0 0 24 24"
+                 width="24"
+                 height="24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 aria-hidden="true">
+
+                <path d="M3 12a9 9 0 1 0 3-6.7"/>
+                <path d="M3 3v6h6"/>
+
+            </svg>
+
+        </div>
+
+        <h2 id="restore-title-{{ category.id }}">
+            Restore Category?
+        </h2>
+
+        <p class="modal-description">
+            Are you sure you want to restore
+            <strong>{{ category.name }}</strong>?
+
+            This category will become active again
+            and available for catalog item selections.
+
+            Existing records and transaction history
+            will remain unchanged.
+        </p>
+
+                <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="category_restore">
+            <input type="hidden" name="category_id" value="{{ category.id }}">
+
+<div class="equipment-modal-actions">
+
+            <a href="#categories-table"
+               class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit" class="modal-restore">
+                Restore
+            </button>
+
+        </div>
+        </form>
+
+
+
+    </div>
+</div>
+
+
+
+
+{% endif %}
+
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,185 @@
+
+{% extends 'base_user.html' %}
+{% load static %}
+
+{% block title %}CampusGear | Browse Equipment{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_browse.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="browse-page">
+
+    <!-- PAGE HEADER -->
+    <div class="browse-header">
+        <h1>Browse Equipment</h1>
+        <p>Search active equipment and check availability.</p>
+    </div>
+
+    <!-- SEARCH AND FILTER -->
+    <form method="get" class="browse-filters">
+
+        <div class="browse-search">
+            <i class="icon icon-search" aria-hidden="true"></i>
+            <input
+                type="search"
+                name="q"
+                value="{{ search_query }}"
+                placeholder="Search name or category"
+                aria-label="Search equipment">
+        </div>
+
+        <div class="browse-filter-group">
+            <label for="stock-filter">Status</label>
+
+            <select id="stock-filter" name="status">
+                <option value="all"
+                    {% if status_filter == 'all' %}selected{% endif %}>
+                    All
+                </option>
+
+                <option value="in_stock"
+                    {% if status_filter == 'in_stock' %}selected{% endif %}>
+                    In Stock
+                </option>
+
+                <option value="out_of_stock"
+                    {% if status_filter == 'out_of_stock' %}selected{% endif %}>
+                    Out of Stock
+                </option>
+            </select>
+        </div>
+
+        <button type="submit" class="browse-apply-btn">
+            Apply
+        </button>
+
+        <a href="{% url 'browse_equipment_preview' %}"
+           class="browse-reset-btn">
+            Reset
+        </a>
+
+    </form>
+
+    <!-- EQUIPMENT CARDS -->
+    <div class="browse-grid">
+
+        {% for item in equipment_items %}
+
+        <article class="equipment-card">
+
+            <!-- EQUIPMENT IMAGE -->
+            <div class="equipment-image-container">
+
+                {% if item.image_url %}
+                    <img
+                        src="{{ item.image_url }}"
+                        alt="{{ item.name }}"
+                        class="equipment-image">
+                {% else %}
+                    <div class="equipment-image-placeholder">
+                        <i class="icon icon-image"
+                           aria-hidden="true"></i>
+                        <span>No image available</span>
+                    </div>
+                {% endif %}
+
+            </div>
+
+            <!-- EQUIPMENT INFORMATION -->
+            <div class="equipment-card-body">
+
+                {% if item.available_count > 0 %}
+                    <span class="equipment-stock in-stock">
+                        <span class="stock-dot"></span>
+                        In Stock
+                    </span>
+                {% else %}
+                    <span class="equipment-stock out-of-stock">
+                        <span class="stock-dot"></span>
+                        Out of Stock
+                    </span>
+                {% endif %}
+
+                <h2 class="equipment-name">
+                    {{ item.name }}
+                </h2>
+
+                <p class="equipment-category">
+                    {{ item.category }}
+                </p>
+
+                <p class="equipment-description">
+                    {{ item.description }}
+                </p>
+
+                <!-- AVAILABILITY BAR -->
+                <div class="equipment-availability">
+
+                    <div class="availability-track">
+                        <div
+                            class="availability-fill"
+                            style="width: {{ item.availability_percent }}%;">
+                        </div>
+                    </div>
+
+                    <div class="availability-labels">
+                        <span>
+                            {{ item.available_count }} available now
+                        </span>
+
+                        <span>
+                            {{ item.serviceable_count }} serviceable
+                        </span>
+                    </div>
+
+                </div>
+
+                <!-- REQUEST ACTION -->
+                {% if item.available_count > 0 %}
+                    <a
+                        href="{% url 'user_new_request_preview' %}?item={{ item.id|urlencode }}"
+                        class="equipment-request-btn">
+                        Request This Item
+                    </a>
+                {% else %}
+                    <button
+                        type="button"
+                        class="equipment-request-btn disabled"
+                        disabled>
+                        Currently Unavailable
+                    </button>
+                {% endif %}
+
+            </div>
+
+        </article>
+
+        {% empty %}
+
+        <div class="browse-empty-state">
+            <i class="icon icon-package-search"
+               aria-hidden="true"></i>
+            <h2>No equipment found</h2>
+            <p>
+                Try changing your search term or stock filter.
+            </p>
+
+            <a href="{% url 'browse_equipment_preview' %}">
+                Clear Filters
+            </a>
+        </div>
+
+        {% endfor %}
+
+    </div>
+
+    <p class="browse-result-count">
+        Showing {{ equipment_items|length }} equipment item(s)
+    </p>
+
+</div>
+
+{% endblock %}

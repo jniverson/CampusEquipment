@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}Admin{% endblock %} | CampusGear</title>
+
+    <link rel="stylesheet" href="{% static 'css/admin.css' %}">
+    <link rel="stylesheet" href="https://unpkg.com/lucide-static@0.468.0/font/lucide.css">
+    <link rel="stylesheet" href="{% static 'css/components.css' %}">
+
+    <!-- PAGE SPECIFIC CSS -->
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="admin-layout">
+
+    {% include 'components/admin_sidebar.html' %}
+
+    <div class="main-wrapper">
+
+        <header class="topbar">
+            <div class="admin-profile">
+                <span class="avatar" aria-hidden="true">{% if user.is_authenticated %}{{ user.username|first|upper }}{% else %}A{% endif %}</span>
+                <span>{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% else %}Admin{% endif %}</span>
+            </div>
+        </header>
+
+        <main class="main-content" id="main">
+            {% include 'components/messages.html' %}
+            {% block content %}{% endblock %}
+        </main>
+
+    </div>
+
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

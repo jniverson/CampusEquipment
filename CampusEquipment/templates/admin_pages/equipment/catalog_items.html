@@ -1,0 +1,592 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/equipment.css' %}?v=4">
+{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="equipment-header">
+    <h1>Equipment Catalog & Physical Units</h1>
+    <p>Manage categories and catalog items, view unit details.</p>
+</div>
+
+<!-- TABS -->
+<div class="equipment-tabs">
+
+    <a href="{% url 'categories_preview' %}"
+       class="equipment-tab">
+        Categories
+    </a>
+
+    <a href="{% url 'catalog_items_preview' %}"
+       class="equipment-tab active">
+        Catalog Items
+    </a>
+
+    <a href="{% url 'physical_units_preview' %}"
+       class="equipment-tab">
+        Physical Units
+    </a>
+
+</div>
+
+<!-- MAIN CARD -->
+<section class="equipment-card" id="catalog-table">
+
+    <div class="equipment-card-header">
+        <h2>Catalog Items</h2>
+
+        <a href="#add-item" class="category-add-btn">
+            + Add Item
+        </a>
+    </div>
+
+    <!-- FILTERS -->
+    <form method="get" class="catalog-filters">
+
+        <div class="catalog-filter-field">
+            <label for="category-filter">Category</label>
+
+            <select id="category-filter" name="category">
+                <option value="all"
+                    {% if selected_category == 'all' %}selected{% endif %}>
+                    All Categories
+                </option>
+
+                {% for category in categories %}
+                <option value="{{ category.id }}"
+                    {% if selected_category == category.id|stringformat:"s" %}selected{% endif %}>
+                    {{ category.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="catalog-filter-field">
+            <label for="item-filter">Items</label>
+
+            <select id="item-filter" name="item">
+                <option value="all"
+                    {% if selected_item == 'all' %}selected{% endif %}>
+                    All Items
+                </option>
+
+                {% for item in all_items %}
+                <option value="{{ item.id }}"
+                    {% if selected_item == item.id|stringformat:"s" %}selected{% endif %}>
+                    {{ item.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="catalog-filter-field">
+            <label for="status-filter">Status</label>
+
+            <select id="status-filter" name="status">
+                <option value="all"
+                    {% if status_filter == 'all' %}selected{% endif %}>
+                    All Status
+                </option>
+
+                <option value="active"
+                    {% if status_filter == 'active' %}selected{% endif %}>
+                    Active
+                </option>
+
+                <option value="archived"
+                    {% if status_filter == 'archived' %}selected{% endif %}>
+                    Archived
+                </option>
+            </select>
+        </div>
+
+        <button type="submit" class="category-filter-btn">
+            Apply
+        </button>
+    </form>
+
+    <!-- CATALOG TABLE -->
+    <div class="equipment-table-wrapper">
+
+        <table class="equipment-table catalog-table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Category</th>
+                    <th>Total Units</th>
+                    <th>Serviceable</th>
+                    <th>Available</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <!-- ITEM -->
+                    <td>
+                        <div class="catalog-item-info">
+                            <div class="catalog-thumbnail">
+                                {% if item.image %}
+                                    <img src="{% static item.image %}"
+                                         alt="{{ item.name }}">
+                                {% else %}
+                                    <span class="no-image">No image</span>
+                                {% endif %}
+                            </div>
+
+                            <span>{{ item.name }}</span>
+                        </div>
+                    </td>
+
+                    <!-- CATEGORY -->
+                    <td>{{ item.category_name }}</td>
+
+                    <!-- UNIT COUNTS -->
+                    <td>{{ item.total_units }}</td>
+                    <td>{{ item.serviceable_units }}</td>
+                    <td>{{ item.available_units }}</td>
+
+                    <!-- STATUS -->
+                    <td>
+                        {% if item.is_active %}
+                        {% include 'components/status_badge.html' with status="Active" %}
+                        {% else %}
+                        {% include 'components/status_badge.html' with status="Archived" %}
+                        {% endif %}
+                    </td>
+
+                    <!-- ACTIONS -->
+                    <td>
+                        <div class="category-actions">
+
+                            <a href="#view-item-{{ item.id }}"
+                               class="category-action-btn">
+                                View
+                            </a>
+
+                            {% if item.is_active %}
+
+                            <a href="#edit-item-{{ item.id }}"
+                               class="category-action-btn">
+                                Edit
+                            </a>
+
+                            <a href="#archive-item-{{ item.id }}"
+                               class="category-action-btn archive-action">
+                                Archive
+                            </a>
+
+                            {% else %}
+
+                            <a href="#restore-item-{{ item.id }}"
+                               class="category-action-btn restore-action">
+                                Restore
+                            </a>
+
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+
+                {% empty %}
+                {% include 'components/empty_row.html' with colspan="7" title="No catalog items found." hint="Try changing your filters." %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+
+
+<!-- ADD CATALOG ITEM MODAL -->
+<div id="add-item" class="equipment-modal-overlay">
+    <div class="equipment-modal catalog-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="add-item-title">
+
+        <div class="equipment-modal-header">
+            <h2 id="add-item-title">
+                Add Catalog Item
+            </h2>
+
+            <a href="#catalog-table"
+               class="modal-close"
+               aria-label="Close">&times;</a>
+        </div>
+
+        <p class="modal-subtitle">
+            Create a new catalog item.
+        </p>
+        <form method="post" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="item_create">
+
+
+        <div class="category-form">
+
+            <label for="new-item-name">
+                Item Name *
+            </label>
+
+            <input type="text"
+                   id="new-item-name"
+                   name="name"
+                   placeholder="e.g., Wireless Microphone"
+                   maxlength="150"
+                   required>
+
+            <label for="new-item-category">
+                Category *
+            </label>
+
+            <select id="new-item-category"
+                    name="category"
+                    required>
+
+                <option value="">
+                    Select a category
+                </option>
+
+                {% for category in categories %}
+                    {% if category.is_active %}
+                    <option value="{{ category.id }}">
+                        {{ category.name }}
+                    </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+
+            <label for="new-item-description">
+                Description
+            </label>
+
+            <textarea id="new-item-description"
+                      name="description"
+                      rows="3"
+                      placeholder="Enter brief description"></textarea>
+
+            <label for="new-item-image">
+                Image (Optional)
+            </label>
+
+            <div class="catalog-upload">
+                <input type="file"
+                       id="new-item-image"
+                       name="image"
+                       accept="image/png,image/jpeg,image/webp">
+
+                <small>Choose JPG, PNG, or WebP</small>
+            </div>
+        </div>
+
+        <div class="equipment-modal-actions">
+            <a href="#catalog-table" class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit" class="modal-save">
+                Save Item
+            </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ITEM-SPECIFIC MODALS -->
+{% for item in items %}
+
+<!-- VIEW CATALOG ITEM -->
+<div id="view-item-{{ item.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal catalog-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="view-item-title-{{ item.id }}">
+
+        <div class="equipment-modal-header">
+            <h2 id="view-item-title-{{ item.id }}">
+                Catalog Item Details
+            </h2>
+
+            <a href="#catalog-table"
+               class="modal-close"
+               aria-label="Close">&times;</a>
+        </div>
+
+        <div class="catalog-details">
+
+            <div class="detail-row">
+                <span>Item Name</span>
+                <strong>{{ item.name }}</strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Category</span>
+                <strong>{{ item.category_name }}</strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Description</span>
+                <p>
+                    {{ item.description|default:"No description provided." }}
+                </p>
+            </div>
+
+            <div class="detail-row">
+                <span>Total Units</span>
+                <strong>{{ item.total_units }}</strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Serviceable Units</span>
+                <strong>{{ item.serviceable_units }}</strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Available Units</span>
+                <strong>{{ item.available_units }}</strong>
+            </div>
+
+            <div class="detail-row">
+                <span>Status</span>
+                <strong>
+                    {% if item.is_active %}
+                        Active
+                    {% else %}
+                        Archived
+                    {% endif %}
+                </strong>
+            </div>
+
+        </div>
+
+        <div class="equipment-modal-actions">
+            <a href="#catalog-table" class="modal-cancel">
+                Close
+            </a>
+        </div>
+    </div>
+</div>
+
+
+{% if item.is_active %}
+
+<!-- EDIT CATALOG ITEM -->
+<div id="edit-item-{{ item.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal catalog-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="edit-title-{{ item.id }}">
+
+        <div class="equipment-modal-header">
+            <h2 id="edit-title-{{ item.id }}">
+                Edit Catalog Item
+            </h2>
+
+            <a href="#catalog-table"
+               class="modal-close"
+               aria-label="Close">&times;</a>
+        </div>
+
+        <p class="modal-subtitle">
+            Update catalog item information.
+        </p>
+        <form method="post" action="" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="item_update">
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+
+
+        <div class="category-form">
+
+            <label for="edit-name-{{ item.id }}">
+                Item Name *
+            </label>
+
+            <input type="text"
+                   id="edit-name-{{ item.id }}"
+                   name="name"
+                   value="{{ item.name }}"
+                   required>
+
+            <label for="edit-category-{{ item.id }}">
+                Category *
+            </label>
+
+            <select id="edit-category-{{ item.id }}"
+                   name="category">
+                {% for category in categories %}
+                    {% if category.is_active %}
+                    <option value="{{ category.id }}"
+                        {% if item.category_id == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+
+            <label for="edit-description-{{ item.id }}">
+                Description
+            </label>
+
+            <textarea id="edit-description-{{ item.id }}"
+                   name="description"
+                      rows="3">{{ item.description }}</textarea>
+
+            <label for="edit-image-{{ item.id }}">
+                Replace Image (Optional)
+            </label>
+
+            <input type="file"
+                   id="edit-image-{{ item.id }}"
+                   name="image"
+                   accept="image/png,image/jpeg,image/webp">
+
+        </div>
+
+        <div class="equipment-modal-actions">
+            <a href="#catalog-table" class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit" class="modal-save">
+                Save Changes
+            </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- ARCHIVE CATALOG ITEM -->
+<div id="archive-item-{{ item.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="archive-title-{{ item.id }}">
+
+        <div class="modal-warning-icon">
+            <svg viewBox="0 0 24 24"
+                 width="24"
+                 height="24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 aria-hidden="true">
+                <path d="M12 3 2 20h20L12 3Z"/>
+                <path d="M12 9v5M12 17h.01"/>
+            </svg>
+        </div>
+
+        <h2 id="archive-title-{{ item.id }}">
+            Archive Catalog Item?
+        </h2>
+
+        <p class="modal-description">
+            Are you sure you want to archive
+            <strong>{{ item.name }}</strong>?
+            This item will be hidden from active catalog
+            selections. Existing physical units and
+            transaction history will be retained.
+        </p>
+
+                <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="item_archive">
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+
+<div class="equipment-modal-actions">
+            <a href="#catalog-table" class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit" class="modal-archive">
+                Archive
+            </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+
+{% else %}
+
+<!-- RESTORE CATALOG ITEM -->
+<div id="restore-item-{{ item.id }}"
+     class="equipment-modal-overlay">
+
+    <div class="equipment-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="restore-item-title-{{ item.id }}">
+
+        <div class="modal-restore-icon">
+            <svg viewBox="0 0 24 24"
+                 width="24"
+                 height="24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.8"
+                 stroke-linecap="round"
+                 stroke-linejoin="round"
+                 aria-hidden="true">
+                <path d="M3 12a9 9 0 1 0 3-6.7"/>
+                <path d="M3 3v6h6"/>
+            </svg>
+        </div>
+
+        <h2 id="restore-item-title-{{ item.id }}">
+            Restore Catalog Item?
+        </h2>
+
+        <p class="modal-description">
+            Are you sure you want to restore
+            <strong>{{ item.name }}</strong>?
+            This item will become active again.
+
+            It will be available for active catalog selections
+            only when its parent category is also active.
+
+            Existing physical units and transaction
+            history will remain unchanged.
+        </p>
+
+                <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="item_restore">
+            <input type="hidden" name="item_id" value="{{ item.id }}">
+
+<div class="equipment-modal-actions">
+            <a href="#catalog-table" class="modal-cancel">
+                Cancel
+            </a>
+
+            <button type="submit" class="modal-restore">
+                Restore
+            </button>
+        </div>
+        </form>
+
+
+    </div>
+</div>
+
+{% endif %}
+{% endfor %}
+
+{% endblock %}

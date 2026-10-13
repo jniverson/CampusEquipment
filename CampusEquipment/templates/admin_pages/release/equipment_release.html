@@ -1,0 +1,347 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/release.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="release-page">
+
+    <header class="release-page-header">
+        <div>
+            <h1>Equipment Release</h1>
+            <p>
+                Issue approved requests with fully allocated
+                equipment and review recent loans.
+            </p>
+        </div>
+    </header>
+
+    <!-- APPROVED REQUESTS -->
+    <section class="release-card">
+        <div class="release-section-header">
+            <div>
+                <h2>Approved Requests Ready to Issue</h2>
+                <p>Verify allocated physical units before release.</p>
+            </div>
+            <span class="release-count">{{ approved_requests|length }} Ready</span>
+        </div>
+
+        <div class="release-table-wrap">
+            <table class="release-table">
+                <thead>
+                    <tr>
+                        <th>Request</th>
+                        <th>Borrower</th>
+                        <th>Requested Items</th>
+                        <th>Allocated Units</th>
+                        <th>Due Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for borrowing in approved_requests %}
+                    <tr>
+                        <td class="release-reference">{{ borrowing.code }}</td>
+                        <td>{{ borrowing.borrower }}</td>
+
+                        <td>
+                            <div class="release-stack">
+                                {% for item in borrowing.items %}
+                                    <span>{{ item.name }} × {{ item.quantity }}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <td>
+                            <div class="release-stack">
+                                {% for item in borrowing.items %}
+                                    {% for code in item.allocated_codes %}
+                                        <span class="release-asset-code">{{ code }}</span>
+                                    {% endfor %}
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <td>{{ borrowing.return_date }}</td>
+
+                        <td>
+                            <a href="#issue-{{ borrowing.id }}"
+                               class="release-button release-button-primary release-table-action">
+                                Issue
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    {% include 'components/empty_row.html' with colspan="6" title="No approved requests ready for release." %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- RECENT LOANS -->
+    <section class="release-card">
+        <div class="release-section-header">
+            <div>
+                <h2>Recent Loans</h2>
+                <p>View equipment release records and loan slips.</p>
+            </div>
+        </div>
+
+        <div class="release-table-wrap">
+            <table class="release-table">
+                <thead>
+                    <tr>
+                        <th>Loan ID</th>
+                        <th>Borrower</th>
+                        <th>Equipment</th>
+                        <th>Release Date</th>
+                        <th>Due Date</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for loan in loans %}
+                    <tr>
+                        <td class="release-reference">{{ loan.code }}</td>
+                        <td>{{ loan.borrower }}</td>
+
+                        <td>
+                            <div class="release-stack">
+                                {% for item in loan.items %}
+                                    <span>{{ item.name }} × {{ item.quantity }}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <td>{{ loan.release_date }}</td>
+                        <td>{{ loan.due_date }}</td>
+
+                        <td>
+                            <a href="#slip-{{ loan.id }}"
+                               class="release-button release-button-outline release-table-action">
+                                View Slip
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    {% include 'components/empty_row.html' with colspan="6" title="No recent loans found." %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'components/pagination.html' %}
+    </section>
+</div>
+
+<!-- ISSUE CONFIRMATION MODALS -->
+{% for borrowing in approved_requests %}
+
+<div id="issue-{{ borrowing.id }}" class="release-overlay">
+    <div class="release-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="issue-title-{{ borrowing.id }}">
+
+        <div class="release-modal-header">
+            <div>
+                <span class="release-eyebrow">EQUIPMENT HANDOVER</span>
+                <h2 id="issue-title-{{ borrowing.id }}">
+                    Confirm Equipment Release
+                </h2>
+                <p>Verify all information before issuing equipment.</p>
+            </div>
+
+            <a href="#" class="release-modal-close"
+               aria-label="Close">×</a>
+        </div>
+
+        <div class="release-info-grid">
+            <div class="release-info">
+                <span>Request ID</span>
+                <strong>{{ borrowing.code }}</strong>
+            </div>
+
+            <div class="release-info">
+                <span>Borrower</span>
+                <strong>{{ borrowing.borrower }}</strong>
+            </div>
+
+            <div class="release-info">
+                <span>Requested Date</span>
+                <strong>{{ borrowing.request_date }}</strong>
+            </div>
+
+            <div class="release-info">
+                <span>Due Date</span>
+                <strong>{{ borrowing.return_date }}</strong>
+            </div>
+        </div>
+
+        <div class="release-modal-section">
+            <h3>Equipment to Release</h3>
+
+            {% for item in borrowing.items %}
+            <div class="release-equipment-group">
+                <div class="release-equipment-header">
+                    <strong>{{ item.name }} × {{ item.quantity }}</strong>
+                    <span class="release-tag release-tag-reserved">
+                        Reserved
+                    </span>
+                </div>
+
+                {% for code in item.allocated_codes %}
+                <div class="release-unit">
+                    <span>Asset Code</span>
+                    <strong>{{ code }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="decision" value="release">
+        <input type="hidden" name="request_id" value="{{ borrowing.id }}">
+
+        <label class="release-confirm-check">
+            <input type="checkbox" name="verified" value="1" required>
+            <span>
+                I have verified the borrower and all allocated
+                equipment before release.
+            </span>
+        </label>
+
+
+
+        <div class="release-modal-actions">
+            <a href="#" class="release-button release-button-outline">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="release-button release-button-primary">
+                Confirm Issue
+            </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+{% endfor %}
+
+<!-- RELEASE SLIP MODALS -->
+{% for loan in loans %}
+
+<div id="slip-{{ loan.id }}" class="release-overlay">
+    <div class="release-modal release-slip-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="slip-title-{{ loan.id }}">
+
+        <div class="release-modal-header">
+            <div>
+                <span class="release-eyebrow">CAMPUSGEAR</span>
+                <h2 id="slip-title-{{ loan.id }}">
+                    Equipment Release Slip
+                </h2>
+                <p>Loan reference: {{ loan.code }}</p>
+            </div>
+
+            <a href="#" class="release-modal-close"
+               aria-label="Close">×</a>
+        </div>
+
+        <div class="release-slip-status">
+            <span>Loan Status</span>
+            <span class="release-tag release-tag-issued">
+                {{ loan.status }}
+            </span>
+        </div>
+
+        <div class="release-info-grid release-slip-info">
+            <div class="release-info">
+                <span>Loan ID</span>
+                <strong>{{ loan.code }}</strong>
+            </div>
+
+            <div class="release-info">
+                <span>Request ID</span>
+                <strong>{{ loan.request_code }}</strong>
+            </div>
+
+            <div class="release-info">
+                <span>Borrower</span>
+                <strong>{{ loan.borrower }}</strong>
+            </div>
+
+            <div class="release-info">
+                <span>Released By</span>
+                <strong>{{ loan.released_by }}</strong>
+            </div>
+
+            <div class="release-info">
+                <span>Release Date</span>
+                <strong>{{ loan.release_date }}</strong>
+            </div>
+
+            <div class="release-info">
+                <span>Due Date</span>
+                <strong>{{ loan.due_date }}</strong>
+            </div>
+        </div>
+
+        <div class="release-modal-section">
+            <h3>Released Equipment</h3>
+
+            {% for item in loan.items %}
+            <div class="release-equipment-group">
+                <div class="release-equipment-header">
+                    <strong>{{ item.name }} × {{ item.quantity }}</strong>
+                    <span class="release-tag release-tag-issued">
+                        Issued
+                    </span>
+                </div>
+
+                {% for code in item.allocated_codes %}
+                <div class="release-unit">
+                    <span>Asset Code</span>
+                    <strong>{{ code }}</strong>
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="release-signatures">
+            <div><span>Borrower signature</span></div>
+            <div><span>Released by (admin)</span></div>
+        </div>
+
+        <div class="release-modal-actions">
+            <a href="#" class="release-button release-button-outline">
+                Close
+            </a>
+
+            <button type="button"
+                    class="release-button release-button-primary"
+                    onclick="window.print()">
+                Print Slip
+            </button>
+        </div>
+    </div>
+</div>
+
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,286 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<!-- PAGE HEADER -->
+<div class="accounts-header">
+    <h1>Account Management</h1>
+    <p>
+        Basic users only. Deactivation blocks new sign-ins
+        and transactions; records are kept.
+    </p>
+</div>
+
+<!-- SEARCH AND FILTER -->
+<form method="get" class="accounts-toolbar">
+
+    <div class="account-search">
+        <input
+            type="search"
+            name="q"
+            value="{{ search_query }}"
+            placeholder="Search name or email"
+            aria-label="Search users"
+        >
+
+        <button type="submit" aria-label="Search">
+            <svg viewBox="0 0 24 24"
+                 fill="none"
+                 stroke="currentColor"
+                 stroke-width="1.7"
+                 stroke-linecap="round">
+                <circle cx="11" cy="11" r="7"/>
+                <path d="m16 16 5 5"/>
+            </svg>
+        </button>
+    </div>
+
+    <select name="status"
+            aria-label="Filter account status">
+
+        <option value="all"
+            {% if status_filter == 'all' %}selected{% endif %}>
+            All Status
+        </option>
+
+        <option value="active"
+            {% if status_filter == 'active' %}selected{% endif %}>
+            Active
+        </option>
+
+        <option value="inactive"
+            {% if status_filter == 'inactive' %}selected{% endif %}>
+            Inactive
+        </option>
+
+    </select>
+
+    <button type="submit" class="filter-button">
+        Apply
+    </button>
+</form>
+
+
+<!-- ACCOUNT TABLE -->
+<div class="accounts-card" id="accounts-table">
+
+    <div class="accounts-table-scroll">
+
+        <table class="accounts-table">
+
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Status</th>
+                    <th>Requests</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for account in accounts %}
+
+                <tr>
+                    <td>{{ account.name }}</td>
+
+                    <td>{{ account.email }}</td>
+
+                    <!-- STATUS -->
+                    <td>
+                        {% if account.is_active %}
+                            {% include 'components/status_badge.html' with status="Active" %}
+                        {% else %}
+                            {% include 'components/status_badge.html' with status="Inactive" %}
+                        {% endif %}
+                    </td>
+
+                    <td>{{ account.request_count }}</td>
+
+                    <!-- ACTIONS -->
+                    <td>
+                        <div class="account-actions">
+
+                            <a class="btn-history"
+                               href="{% url 'account_history_preview' account.id %}">
+                                History
+                            </a>
+
+                            {% if account.is_active %}
+
+                                <a class="btn-deactivate"
+                                   href="#deactivate-{{ account.id }}">
+                                    Deactivate
+                                </a>
+
+                            {% else %}
+
+                                <a class="btn-activate"
+                                   href="#activate-{{ account.id }}">
+                                    Activate
+                                </a>
+
+                            {% endif %}
+
+                        </div>
+                    </td>
+                </tr>
+
+                {% empty %}
+                {% include 'components/empty_row.html' with colspan="5" title="No accounts found." hint="Try another name, email, or status filter." %}
+                {% endfor %}
+            </tbody>
+
+        </table>
+
+    </div>
+
+    <!-- PAGINATION -->
+    {% if page_obj.has_other_pages %}
+    {% include 'components/pagination.html' %}
+    {% endif %}
+
+</div>
+
+
+<!-- =====================================
+     CONFIRMATION MODALS
+     OUTSIDE THE TABLE
+===================================== -->
+
+{% for account in accounts %}
+
+    {% if account.is_active %}
+
+    <!-- DEACTIVATE MODAL -->
+    <div id="deactivate-{{ account.id }}"
+         class="modal-overlay">
+
+        <div class="confirmation-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="deactivate-title-{{ account.id }}">
+
+            <div class="modal-warning-icon">
+                <svg viewBox="0 0 24 24"
+                     width="25"
+                     height="25"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="1.8"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+                    <path d="M12 3 2 20h20L12 3Z"/>
+                    <path d="M12 9v5M12 17h.01"/>
+                </svg>
+            </div>
+
+            <h2 id="deactivate-title-{{ account.id }}">
+                Deactivate Account?
+            </h2>
+
+            <p class="modal-description">
+                Are you sure you want to deactivate
+                <strong>{{ account.name }}</strong>?
+                This user will no longer be able to
+                sign in or submit transactions.
+                Existing records will be retained.
+            </p>
+
+            <form method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="decision" value="deactivate">
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+
+                <div class="modal-actions">
+
+                    <a href="#accounts-table"
+                       class="modal-cancel">
+                        Cancel
+                    </a>
+
+                    <button type="submit"
+                            class="modal-confirm">
+                        Deactivate
+                    </button>
+
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+    {% else %}
+
+    <!-- ACTIVATE MODAL -->
+    <div id="activate-{{ account.id }}"
+         class="modal-overlay">
+
+        <div class="confirmation-modal"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="activate-title-{{ account.id }}">
+
+            <div class="modal-activate-icon">
+                <svg viewBox="0 0 24 24"
+                     width="25"
+                     height="25"
+                     fill="none"
+                     stroke="currentColor"
+                     stroke-width="1.8"
+                     stroke-linecap="round"
+                     stroke-linejoin="round"
+                     aria-hidden="true">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="m8 12 3 3 5-6"/>
+                </svg>
+            </div>
+
+            <h2 id="activate-title-{{ account.id }}">
+                Activate Account?
+            </h2>
+
+            <p class="modal-description">
+                Are you sure you want to activate
+                <strong>{{ account.name }}</strong>?
+                This user will be allowed to sign in
+                and submit new borrowing requests.
+            </p>
+
+            <form method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="decision" value="activate">
+                <input type="hidden" name="account_id" value="{{ account.id }}">
+
+                <div class="modal-actions">
+
+                    <a href="#accounts-table"
+                       class="modal-cancel">
+                        Cancel
+                    </a>
+
+                    <button type="submit"
+                            class="modal-confirm activate-confirm">
+                        Activate
+                    </button>
+
+                </div>
+            </form>
+
+
+
+        </div>
+    </div>
+
+    {% endif %}
+
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% comment %} Pagination that keeps the current search/filters (reads request.GET). Needs `page_obj`.
+   usage: {% include 'components/pagination.html' %} {% endcomment %}
+{% if page_obj %}
+<nav class="ui-pagination" aria-label="Pagination">
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+    <form method="get" class="ui-pagination-buttons">
+        {% for key, value in request.GET.items %}{% if key != 'page' %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
+        {% if page_obj.has_previous %}
+        <button type="submit" name="page" value="{{ page_obj.previous_page_number }}">&larr; Previous</button>
+        {% endif %}
+        {% if page_obj.has_next %}
+        <button type="submit" name="page" value="{{ page_obj.next_page_number }}">Next &rarr;</button>
+        {% endif %}
+    </form>
+</nav>
+{% endif %}

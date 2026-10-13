@@ -1,0 +1,93 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>{% block title %}CampusGear | User{% endblock %}</title>
+
+    <!-- USER MAIN CSS -->
+    <link rel="stylesheet"
+          href="{% static 'css/user.css' %}">
+
+    <!-- SHARED COMPONENTS -->
+    <link rel="stylesheet"
+          href="{% static 'css/components.css' %}">
+
+    <!-- LUCIDE ICONS -->
+    <link rel="stylesheet"
+          href="https://unpkg.com/lucide-static@0.468.0/font/lucide.css">
+
+    <!-- PAGE SPECIFIC CSS -->
+    {% block extra_css %}
+    {% endblock %}
+</head>
+
+<body>
+
+<a class="skip-link" href="#main">Skip to main content</a>
+
+<div class="user-layout">
+
+    <!-- SIDEBAR -->
+    {% include 'components/user_sidebar.html' %}
+
+    <!-- MAIN WRAPPER -->
+    <div class="user-main-wrapper">
+
+        <!-- TOPBAR -->
+        <header class="user-topbar">
+
+            <div class="user-topbar-right">
+
+                <div class="user-profile-info">
+                    <span class="user-avatar">
+                        {% if user.is_authenticated %}
+                            {{ user.username|first|upper }}
+                        {% else %}
+                            U
+                        {% endif %}
+                    </span>
+
+                    <div class="user-profile-text">
+
+                        <span class="user-display-name">
+                            {% if user.is_authenticated %}
+                                {{ user.get_full_name|default:user.username }}
+                            {% else %}
+                                Basic User
+                            {% endif %}
+                        </span>
+
+                        <span class="user-role-label">
+                            Basic User
+                        </span>
+
+                    </div>
+                </div>
+
+            </div>
+
+        </header>
+
+        <!-- MAIN CONTENT -->
+        <main class="user-main-content" id="main">
+
+            {% include 'components/messages.html' %}
+
+            {% block content %}
+            {% endblock %}
+
+        </main>
+
+    </div>
+
+</div>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

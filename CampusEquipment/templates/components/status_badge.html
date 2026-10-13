@@ -1,0 +1,7 @@
+{% comment %} Reusable status badge. Text is ALWAYS shown (color is never the only signal).
+   usage: {% include 'components/status_badge.html' with status=request.status %}
+          optional label: {% include 'components/status_badge.html' with status="Open" label="Outstanding" %} {% endcomment %}
+<span class="ui-badge ui-badge--{{ status|slugify }}">
+    <span class="ui-badge-dot" aria-hidden="true"></span>
+    {{ label|default:status }}
+</span>

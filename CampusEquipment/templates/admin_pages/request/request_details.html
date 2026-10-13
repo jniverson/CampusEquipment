@@ -1,0 +1,450 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block title %}Request {{ borrowing.code }}{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/request.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="rd-page">
+
+    <nav class="rd-breadcrumb">
+        <a href="{% url 'request_queue_preview' %}">Request Queue</a>
+        <span>/</span>
+        <span>{{ borrowing.code }}</span>
+    </nav>
+
+    <header class="rd-header">
+        <div>
+            <span class="rd-eyebrow">BORROWING REQUEST</span>
+            <h1>Request {{ borrowing.code }}</h1>
+            <p>View request information, equipment, and decisions.</p>
+        </div>
+
+        {% include 'components/status_badge.html' with status=borrowing.status %}
+    </header>
+
+    <div class="rd-layout">
+
+        <!-- LEFT CONTENT -->
+        <div class="rd-main">
+
+            <section class="rd-card">
+                <div class="rd-card-heading">
+                    <div class="rd-heading-icon">01</div>
+                    <div>
+                        <h2>Request Information</h2>
+                        <p>Borrower details and requested schedule</p>
+                    </div>
+                </div>
+
+                <div class="rd-info-grid">
+                    <div class="rd-info">
+                        <span>Request ID</span>
+                        <strong>{{ borrowing.code }}</strong>
+                    </div>
+
+                    <div class="rd-info">
+                        <span>Borrower</span>
+                        <strong>{{ borrowing.borrower }}</strong>
+                    </div>
+
+                    <div class="rd-info">
+                        <span>Date Requested</span>
+                        <strong>{{ borrowing.request_date }}</strong>
+                    </div>
+
+                    <div class="rd-info">
+                        <span>Desired Return</span>
+                        <strong>{{ borrowing.return_date }}</strong>
+                    </div>
+                </div>
+
+                <div class="rd-purpose">
+                    <span>Purpose of Borrowing</span>
+                    <p>{{ borrowing.purpose }}</p>
+                </div>
+            </section>
+
+            <section class="rd-card">
+                <div class="rd-card-heading">
+                    <div class="rd-heading-icon">02</div>
+                    <div>
+                        <h2>Equipment &amp; Physical Units</h2>
+                        <p>Requested quantities and asset information</p>
+                    </div>
+                </div>
+
+                {% for item in borrowing.items %}
+                <div class="rd-equipment">
+
+                    <div class="rd-equipment-header">
+                        <div class="rd-equipment-icon">▣</div>
+
+                        <div class="rd-equipment-name">
+                            <h3>{{ item.name }}</h3>
+                            <p>Requested Quantity: {{ item.quantity }}</p>
+                        </div>
+
+                        {% if borrowing.status == 'Pending' %}
+                            <span class="rd-available">
+                                {{ item.available }} Available
+                            </span>
+                        {% else %}
+                            <span class="rd-quantity">
+                                × {{ item.quantity }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if borrowing.status == 'Pending' %}
+
+                        <div class="rd-section-label">
+                            <strong>Available Physical Units</strong>
+                            <span>Select {{ item.quantity }} unit(s)</span>
+                        </div>
+
+                        {% if item.available < item.quantity %}
+                        <p class="rd-alert">
+                            Insufficient available units for this item.
+                        </p>
+                        {% endif %}
+
+                        <div class="rd-unit-list">
+                            {% for unit in item.units %}
+                            <label class="rd-unit rd-unit-select">
+                                <input
+                                    type="checkbox"
+                                    form="approve-form"
+                                    name="units_{{ item.id }}"
+                                    value="{{ unit.code }}">
+
+                                <div class="rd-unit-info">
+                                    <strong>{{ unit.code }}</strong>
+                                    <small>Condition: {{ unit.condition }}</small>
+                                </div>
+
+                                <span class="rd-unit-badge">Available</span>
+                            </label>
+                            {% empty %}
+                            <p class="rd-empty">
+                                No selectable units available.
+                            </p>
+                            {% endfor %}
+                        </div>
+
+                    {% elif borrowing.status == 'Approved' or borrowing.status == 'Issued' %}
+
+                        <div class="rd-section-label">
+                            <strong>
+                                {% if borrowing.status == 'Approved' %}
+                                    Reserved Physical Units
+                                {% else %}
+                                    Issued Physical Units
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="rd-unit-list">
+                            {% for code in item.allocated_codes %}
+                            <div class="rd-unit">
+                                <div class="rd-unit-info">
+                                    <strong>{{ code }}</strong>
+                                    <small>{{ item.name }}</small>
+                                </div>
+
+                                <span class="rd-unit-badge {% if borrowing.status == 'Issued' %}rd-unit-issued{% endif %}">
+                                    {% if borrowing.status == 'Approved' %}
+                                        Reserved
+                                    {% else %}
+                                        Issued
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% empty %}
+                            <p class="rd-empty">
+                                No allocated asset codes recorded.
+                            </p>
+                            {% endfor %}
+                        </div>
+
+                    {% elif borrowing.status == 'Partially Returned' or borrowing.status == 'Returned' %}
+
+                        <div class="rd-section-label">
+                            <strong>Return Records</strong>
+                        </div>
+
+                        <div class="rd-unit-list">
+                            {% for record in item.return_records %}
+                            <div class="rd-unit">
+                                <div class="rd-unit-info">
+                                    <strong>{{ record.asset_code }}</strong>
+                                    <small>
+                                        {% if record.returned_at %}
+                                            Returned: {{ record.returned_at }}
+                                            {% if record.condition %}
+                                                · {{ record.condition }}
+                                            {% endif %}
+                                        {% else %}
+                                            Not yet returned
+                                        {% endif %}
+                                    </small>
+                                </div>
+
+                                {% if record.returned_at %}
+                                    <span class="rd-unit-badge">Returned</span>
+                                {% else %}
+                                    <span class="rd-unit-badge rd-unit-issued">
+                                        Outstanding
+                                    </span>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <p class="rd-empty">
+                                No return records provided.
+                            </p>
+                            {% endfor %}
+                        </div>
+
+                    {% else %}
+
+                        <div class="rd-empty">
+                            No active unit allocation for this request.
+                        </div>
+
+                    {% endif %}
+                </div>
+                {% empty %}
+                <p class="rd-empty">No requested equipment.</p>
+                {% endfor %}
+            </section>
+        </div>
+
+        <!-- RIGHT CONTENT -->
+        <aside class="rd-sidebar">
+            <section class="rd-card">
+                <div class="rd-card-heading">
+                    <div class="rd-heading-icon">03</div>
+                    <div>
+                        <h2>Request Status</h2>
+                        <p>Current processing stage</p>
+                    </div>
+                </div>
+
+                <div class="rd-status-box">
+                    <span>Current Status</span>
+
+                    {% include 'components/status_badge.html' with status=borrowing.status %}
+                </div>
+
+                {% if borrowing.status == 'Pending' %}
+
+                    <p class="rd-sidebar-message">
+                        Review the request, check availability,
+                        and select physical units before approval.
+                    </p>
+
+                    <div class="rd-actions">
+                        <a href="#approve-modal"
+                           class="rd-button rd-button-primary">
+                            Approve &amp; Reserve
+                        </a>
+
+                        <a href="#reject-modal"
+                           class="rd-button rd-button-danger-outline">
+                            Reject Request
+                        </a>
+                    </div>
+
+                {% else %}
+
+                    <div class="rd-decision">
+                        <h3>
+                            {% if borrowing.status == 'Rejected' %}
+                                Rejection Details
+                            {% elif borrowing.status == 'Cancelled' %}
+                                Cancellation Details
+                            {% else %}
+                                Decision Details
+                            {% endif %}
+                        </h3>
+
+                        <div class="rd-decision-row">
+                            <span>Decision Date</span>
+                            <strong>
+                                {{ borrowing.decision_date|default:"Not recorded" }}
+                            </strong>
+                        </div>
+
+                        <div class="rd-decision-row">
+                            <span>Reviewed By</span>
+                            <strong>
+                                {{ borrowing.reviewed_by|default:"Not recorded" }}
+                            </strong>
+                        </div>
+
+                        <div class="rd-decision-reason">
+                            <span>
+                                {% if borrowing.status == 'Rejected' %}
+                                    Rejection Reason
+                                {% elif borrowing.status == 'Cancelled' %}
+                                    Cancellation Reason
+                                {% else %}
+                                    Reason / Remarks
+                                {% endif %}
+                            </span>
+
+                            <p>{{ borrowing.decision_reason|default:"Not provided" }}</p>
+                        </div>
+                    </div>
+
+                    {% if borrowing.loan %}
+                    <div class="rd-decision">
+                        <h3>Loan Information</h3>
+
+                        <div class="rd-decision-row">
+                            <span>Release Date</span>
+                            <strong>{{ borrowing.loan.issued_at }}</strong>
+                        </div>
+
+                        <div class="rd-decision-row">
+                            <span>Released By</span>
+                            <strong>{{ borrowing.loan.released_by }}</strong>
+                        </div>
+
+                        <div class="rd-decision-row">
+                            <span>Due Date</span>
+                            <strong>{{ borrowing.loan.due_date }}</strong>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                {% endif %}
+
+                <a href="{% url 'request_queue_preview' %}"
+                   class="rd-button rd-button-outline rd-back-button">
+                    ← Back to Queue
+                </a>
+            </section>
+        </aside>
+    </div>
+</div>
+
+<!-- CONFIRMATION MODALS -->
+{% if borrowing.status == 'Pending' %}
+
+<div class="rd-overlay" id="approve-modal">
+    <div class="rd-modal" role="dialog"
+         aria-modal="true"
+         aria-labelledby="approval-title">
+
+        <div class="rd-modal-header">
+            <div>
+                <span class="rd-eyebrow">FINAL REVIEW</span>
+                <h2 id="approval-title">Confirm Approval</h2>
+            </div>
+
+            <a href="#" class="rd-modal-close"
+               aria-label="Close">×</a>
+        </div>
+
+        <div class="rd-modal-request">
+            <strong>Request {{ borrowing.code }}</strong>
+            <span>{{ borrowing.borrower }}</span>
+        </div>
+
+        <h3>Requested Equipment</h3>
+
+        <div class="rd-modal-items">
+            {% for item in borrowing.items %}
+            <div>
+                <span>{{ item.name }}</span>
+                <strong>× {{ item.quantity }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+
+        <form method="post" action="" id="approve-form">
+        {% csrf_token %}
+        <input type="hidden" name="decision" value="approve">
+
+        <label class="rd-field-label" for="approval-remarks">
+            Decision Reason / Remarks
+        </label>
+
+        <textarea id="approval-remarks"
+                  name="remarks"
+                  rows="3"
+                  placeholder="Enter approval remarks..."></textarea>
+
+
+        <div class="rd-modal-actions">
+            <a href="#" class="rd-button rd-button-outline">
+                Back
+            </a>
+
+            <button type="submit"
+                    class="rd-button rd-button-primary">
+                Confirm Approval
+            </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+<div class="rd-overlay" id="reject-modal">
+    <div class="rd-modal" role="dialog"
+         aria-modal="true"
+         aria-labelledby="rejection-title">
+
+        <div class="rd-modal-header">
+            <div>
+                <span class="rd-eyebrow">FINAL REVIEW</span>
+                <h2 id="rejection-title">Reject Request</h2>
+            </div>
+
+            <a href="#" class="rd-modal-close"
+               aria-label="Close">×</a>
+        </div>
+
+        <p class="rd-modal-description">
+            Reject request <strong>{{ borrowing.code }}</strong>
+            for <strong>{{ borrowing.borrower }}</strong>?
+        </p>
+
+        <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="decision" value="reject">
+
+        <label class="rd-field-label" for="rejection-reason">
+            Rejection Reason *
+        </label>
+
+        <textarea id="rejection-reason"
+                  name="reason"
+                  rows="4"
+                  placeholder="Enter the reason for rejection..."
+                  required></textarea>
+
+
+
+        <div class="rd-modal-actions">
+            <a href="#" class="rd-button rd-button-outline">
+                Cancel
+            </a>
+
+            <button type="submit"
+                    class="rd-button rd-button-danger">
+                Confirm Rejection
+            </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

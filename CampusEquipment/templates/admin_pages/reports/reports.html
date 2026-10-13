@@ -1,0 +1,199 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/reports.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="reports-page">
+
+    <!-- PAGE HEADER -->
+    <header class="reports-header">
+        <h1>Reports</h1>
+        <p>
+            Computed from loan records — change the dates to
+            view a different reporting period.
+        </p>
+    </header>
+
+    <!-- DATE RANGE FILTER -->
+    <form method="get" class="reports-filters">
+
+        <div class="reports-date-field">
+            <label for="reports-from">From</label>
+            <input
+                id="reports-from"
+                type="date"
+                name="from"
+                value="{{ date_from }}">
+        </div>
+
+        <div class="reports-date-field">
+            <label for="reports-to">To</label>
+            <input
+                id="reports-to"
+                type="date"
+                name="to"
+                value="{{ date_to }}">
+        </div>
+
+        <button type="submit"
+                class="reports-btn reports-btn-primary">
+            Apply
+        </button>
+
+        <a href="{% url 'reports_preview' %}"
+           class="reports-btn reports-btn-outline">
+            Reset
+        </a>
+
+    </form>
+
+    {% if date_error %}
+    <div class="reports-error" role="alert">
+        {{ date_error }}
+    </div>
+    {% endif %}
+
+    <!-- LOAN REPORT -->
+    <section class="reports-card">
+
+        <div class="reports-card-header">
+            <div>
+                <h2>Loan Report</h2>
+                <p>Borrowing transactions released within the selected dates.</p>
+            </div>
+
+            <span class="reports-count">
+                {{ loan_count }} Loans
+            </span>
+        </div>
+
+        <div class="reports-table-wrap">
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th>Loan No.</th>
+                        <th>Borrower</th>
+                        <th>Release Date</th>
+                        <th>Due Date</th>
+                        <th>Units</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for loan in loan_report %}
+                    <tr>
+                        <td class="reports-reference">
+                            {{ loan.code }}
+                        </td>
+
+                        <td>{{ loan.borrower }}</td>
+
+                        <td>{{ loan.release_date }}</td>
+
+                        <td>{{ loan.due_date }}</td>
+
+                        <td>{{ loan.total_units }}</td>
+
+                        <td>
+                            {% include 'components/status_badge.html' with status=loan.status %}
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    {% include 'components/empty_row.html' with colspan="6" title="No loans found for the selected date range." %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="reports-card-footer">
+            <a class="reports-btn reports-btn-primary"
+               href="{% url 'reports_export_preview' 'loans' %}?from={{ date_from|urlencode }}&amp;to={{ date_to|urlencode }}">
+                Export CSV
+            </a>
+        </div>
+    </section>
+
+    <!-- OVERDUE LOANS REPORT -->
+    <section class="reports-card">
+
+        <div class="reports-card-header">
+            <div>
+                <h2>Overdue Loans Report</h2>
+                <p>
+                    Outstanding equipment past its due date,
+                    within the selected reporting period.
+                </p>
+            </div>
+
+            <span class="reports-count reports-count-overdue">
+                {{ overdue_count }} Overdue
+            </span>
+        </div>
+
+        <div class="reports-table-wrap">
+            <table class="reports-table">
+                <thead>
+                    <tr>
+                        <th>Loan No.</th>
+                        <th>Borrower</th>
+                        <th>Due Date</th>
+                        <th>Days Late</th>
+                        <th>Outstanding Units</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for loan in overdue_report %}
+                    <tr>
+                        <td class="reports-reference">
+                            {{ loan.code }}
+                        </td>
+
+                        <td>{{ loan.borrower }}</td>
+
+                        <td>{{ loan.due_date }}</td>
+
+                        <td>
+                            <span class="reports-days-late">
+                                {{ loan.days_late }}
+                                {% if loan.days_late == 1 %}
+                                    day
+                                {% else %}
+                                    days
+                                {% endif %}
+                            </span>
+                        </td>
+
+                        <td>
+                            <div class="reports-assets">
+                                {% for code in loan.outstanding_codes %}
+                                    <span>{{ code }}</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    {% include 'components/empty_row.html' with colspan="5" title="No overdue loans found for this period." %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="reports-card-footer">
+            <a class="reports-btn reports-btn-primary"
+               href="{% url 'reports_export_preview' 'overdue' %}?from={{ date_from|urlencode }}&amp;to={{ date_to|urlencode }}">
+                Export CSV
+            </a>
+        </div>
+    </section>
+
+</div>
+{% endblock %}

@@ -1,0 +1,11 @@
+{# Shows Django messages (messages.success(request, "...") etc.) #}
+{% if messages %}
+<div class="messages" role="status" aria-live="polite">
+    {% for message in messages %}
+    <div class="message message-{{ message.tags }}">
+        <strong>{% if message.tags == 'success' %}Success:{% elif message.tags == 'error' %}Error:{% elif message.tags == 'warning' %}Warning:{% else %}Note:{% endif %}</strong>
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}

@@ -1,0 +1,104 @@
+
+{% extends 'base_admin.html' %}
+
+{% block content %}
+
+<div class="dashboard-header">
+    <h1>Dashboard</h1>
+    <p>Live values derived from stored transactions</p>
+</div>
+
+
+<!-- DASHBOARD SUMMARY CARDS -->
+<div class="stats-grid">
+
+    <!-- AVAILABLE UNITS -->
+    <div class="stat-card available-card">
+        <div class="stat-details">
+            <p>Available Units</p>
+            <h2>{{ available_units|default:"—" }}</h2>
+        </div>
+    </div>
+
+    <!-- PENDING REQUESTS -->
+    <div class="stat-card pending-card">
+        <div class="stat-details">
+            <p>Pending Requests</p>
+            <h2>{{ pending_requests|default:"—" }}</h2>
+        </div>
+    </div>
+
+    <!-- ACTIVE LOANS -->
+    <div class="stat-card active-card">
+        <div class="stat-details">
+            <p>Active Loans</p>
+            <h2>{{ active_loans|default:"—" }}</h2>
+        </div>
+    </div>
+
+    <!-- OVERDUE LOANS -->
+    <div class="stat-card overdue-card">
+        <div class="stat-details">
+            <p>Overdue Loans</p>
+            <h2>{{ overdue_loans|default:"—" }}</h2>
+        </div>
+    </div>
+
+</div>
+
+<!-- DASHBOARD CHARTS -->
+
+<div class="charts-grid">
+
+    <div class="chart-card">
+        <h3>Issued Loans per Month</h3>
+
+        {% if monthly_chart %}
+        <div class="bar-chart">
+            {% for item in monthly_chart %}
+            <div class="bar-group">
+                <div class="bar-area">
+                    <div class="bar blue-bar"
+                         style="height: {{ item.percent }}%;"
+                         title="{{ item.count }} issued loans">
+                    </div>
+                </div>
+                <span>{{ item.label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="chart-empty">
+            No loan data available yet.
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="chart-card">
+        <h3>Category Usage (Units Loaned)</h3>
+
+        {% if category_chart %}
+        <div class="bar-chart">
+            {% for item in category_chart %}
+            <div class="bar-group">
+                <div class="bar-area">
+                    <div class="bar teal-bar"
+                         style="height: {{ item.percent }}%;"
+                         title="{{ item.count }} units loaned">
+                    </div>
+                </div>
+                <span>{{ item.label }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="chart-empty">
+            No category usage data yet.
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+{% endblock %}
+

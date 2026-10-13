@@ -1,0 +1,353 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/maintenance.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="mt-page">
+
+    <header class="mt-page-header">
+        <div>
+            <h1>Equipment Maintenance</h1>
+            <p>Monitor equipment issues, record repairs, and manage maintenance history.</p>
+        </div>
+
+        <a href="#open-maintenance" class="mt-btn mt-btn-primary">
+            + Open Maintenance
+        </a>
+    </header>
+
+
+        <!-- INVENTORY SUMMARY -->
+        <div class="mt-stats">
+
+            <div class="mt-stat">
+                <span class="mt-stat-label mt-label-available">
+                    Available Units
+                </span>
+                <strong>{{ stats.available }}</strong>
+            </div>
+
+            <div class="mt-stat">
+                <span class="mt-stat-label mt-label-reserved">
+                    Reserved
+                </span>
+                <strong>{{ stats.reserved }}</strong>
+            </div>
+
+            <div class="mt-stat">
+                <span class="mt-stat-label mt-label-issued">
+                    Issued
+                </span>
+                <strong>{{ stats.issued }}</strong>
+            </div>
+
+            <div class="mt-stat">
+                <span class="mt-stat-label mt-label-maintenance">
+                    Maintenance
+                </span>
+                <strong>{{ stats.maintenance }}</strong>
+            </div>
+
+            <div class="mt-stat">
+                <span class="mt-stat-label mt-label-retired">
+                    Retired
+                </span>
+                <strong>{{ stats.retired }}</strong>
+            </div>
+
+            <div class="mt-stat">
+                <span class="mt-stat-label mt-label-total">
+                    Total Units
+                </span>
+                <strong>{{ stats.total }}</strong>
+            </div>
+
+        </div>
+
+
+        <form method="get" class="mt-filters">
+            <input type="search"
+                   name="q"
+                   value="{{ search_query }}"
+                   placeholder="Search asset code, item, or problem"
+                   aria-label="Search maintenance records">
+
+            <select name="status" aria-label="Filter by status">
+                <option value="all" {% if status_filter == 'all' %}selected{% endif %}>
+                    All Status
+                </option>
+                <option value="Open" {% if status_filter == 'Open' %}selected{% endif %}>
+                    Open
+                </option>
+                <option value="Closed" {% if status_filter == 'Closed' %}selected{% endif %}>
+                    Closed
+                </option>
+            </select>
+
+            <button type="submit" class="mt-btn mt-btn-primary">Apply</button>
+
+            <a href="{% url 'maintenance_preview' %}"
+               class="mt-btn mt-btn-outline">Reset</a>
+        </form>
+
+        <div class="mt-table-wrap">
+            <table class="mt-table">
+                <thead>
+                    <tr>
+                        <th>Asset Code</th>
+                        <th>Equipment</th>
+                        <th>Problem</th>
+                        <th>Opened</th>
+                        <th>Opened By</th>
+                        <th>Closed</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for record in records %}
+                    <tr>
+                        <td class="mt-asset">{{ record.asset_code }}</td>
+                        <td>{{ record.item_name }}</td>
+                        <td class="mt-problem">{{ record.problem }}</td>
+                        <td>{{ record.opened_at }}</td>
+                        <td>{{ record.opened_by }}</td>
+                        <td>{{ record.closed_at|default:"—" }}</td>
+
+                        <td>
+                            {% include 'components/status_badge.html' with status=record.status %}
+                        </td>
+
+                        <td>
+                            {% if record.status == 'Open' %}
+                                <a href="#close-{{ record.id }}"
+                                   class="mt-btn mt-btn-primary mt-btn-small">
+                                    Close Record
+                                </a>
+                            {% else %}
+                                <a href="#view-{{ record.id }}"
+                                   class="mt-btn mt-btn-outline mt-btn-small">
+                                    View Details
+                                </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    {% include 'components/empty_row.html' with colspan="8" title="No maintenance records found." %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'components/pagination.html' %}
+    </section>
+</div>
+
+<!-- OPEN MAINTENANCE MODAL -->
+<div id="open-maintenance" class="mt-overlay">
+    <div class="mt-modal" role="dialog" aria-modal="true"
+         aria-labelledby="mt-open-title">
+
+        <div class="mt-modal-heading">
+            <div>
+                <span class="mt-eyebrow">NEW MAINTENANCE</span>
+                <h2 id="mt-open-title">Open Maintenance Record</h2>
+                <p>Register an equipment issue for a physical unit.</p>
+            </div>
+
+            <a href="#" class="mt-close" aria-label="Close">×</a>
+        </div>
+
+        <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="decision" value="open_maintenance">
+
+        <div class="mt-field">
+            <label for="mt-new-unit">Physical Unit *</label>
+            <select id="mt-new-unit" name="unit" required>
+                <option value="">Select physical unit</option>
+                {% for unit in eligible_units %}
+                <option value="{{ unit.asset_code }}">
+                    {{ unit.asset_code }} — {{ unit.item_name }}
+                </option>
+                {% endfor %}
+            </select>
+            <small>
+                Units available for maintenance registration.
+                Issued, Reserved, Retired, and already-maintained
+                units cannot be opened directly.
+            </small>
+        </div>
+
+        <div class="mt-field">
+            <label for="mt-problem">Problem Description *</label>
+            <textarea id="mt-problem" name="problem" rows="4"
+                      placeholder="Describe the equipment issue..."
+                      required></textarea>
+        </div>
+
+
+
+        <div class="mt-modal-actions">
+            <a href="#" class="mt-btn mt-btn-outline">Cancel</a>
+            <button type="submit" class="mt-btn mt-btn-primary">
+                Open Record
+            </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+<!-- CLOSE RECORD / VIEW DETAILS -->
+{% for record in records %}
+
+{% if record.status == 'Open' %}
+<div id="close-{{ record.id }}" class="mt-overlay">
+    <div class="mt-modal" role="dialog" aria-modal="true"
+         aria-labelledby="mt-close-title-{{ record.id }}">
+
+        <div class="mt-modal-heading">
+            <div>
+                <span class="mt-eyebrow">MAINTENANCE RESOLUTION</span>
+                <h2 id="mt-close-title-{{ record.id }}">
+                    Close Maintenance Record
+                </h2>
+                <p>{{ record.asset_code }} — {{ record.item_name }}</p>
+            </div>
+            <a href="#" class="mt-close" aria-label="Close">×</a>
+        </div>
+
+        <div class="mt-detail-box">
+            <span>Reported Problem</span>
+            <p>{{ record.problem }}</p>
+            <small>Opened: {{ record.opened_at }} by {{ record.opened_by }}</small>
+        </div>
+
+        <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="decision" value="close_maintenance">
+        <input type="hidden" name="record_id" value="{{ record.id }}">
+
+        <div class="mt-field">
+            <label for="mt-action-{{ record.id }}">
+                Action Taken / Repair Notes *
+            </label>
+            <textarea id="mt-action-{{ record.id }}"
+                      name="action_taken"
+                      rows="4"
+                      placeholder="Describe the repair or maintenance performed..."
+                      required></textarea>
+        </div>
+
+        <div class="mt-field">
+            <label for="mt-condition-{{ record.id }}">
+                Condition After Maintenance *
+            </label>
+            <select id="mt-condition-{{ record.id }}" name="condition_after" required>
+                <option value="">Select condition</option>
+                <option>Good</option>
+                <option>Fair</option>
+                <option>Damaged</option>
+            </select>
+        </div>
+
+        <div class="mt-field">
+            <label for="mt-final-{{ record.id }}">
+                Final Unit Status *
+            </label>
+            <select id="mt-final-{{ record.id }}" name="final_status" required>
+                <option value="">Select final status</option>
+                <option value="AVAILABLE">Available — Serviceable</option>
+                <option value="RETIRED">Retired — No longer usable</option>
+            </select>
+            <small>
+                A unit still requiring repairs should remain under
+                Maintenance instead of closing its record.
+            </small>
+        </div>
+
+
+
+        <div class="mt-modal-actions">
+            <a href="#" class="mt-btn mt-btn-outline">Cancel</a>
+            <button type="submit" class="mt-btn mt-btn-primary">
+                Close Record
+            </button>
+        </div>
+        </form>
+    </div>
+</div>
+
+{% else %}
+<div id="view-{{ record.id }}" class="mt-overlay">
+    <div class="mt-modal" role="dialog" aria-modal="true"
+         aria-labelledby="mt-view-title-{{ record.id }}">
+
+        <div class="mt-modal-heading">
+            <div>
+                <span class="mt-eyebrow">MAINTENANCE HISTORY</span>
+                <h2 id="mt-view-title-{{ record.id }}">
+                    Maintenance Details
+                </h2>
+                <p>{{ record.asset_code }} — {{ record.item_name }}</p>
+            </div>
+            <a href="#" class="mt-close" aria-label="Close">×</a>
+        </div>
+
+        <div class="mt-details-grid">
+            <div>
+                <span>Status</span>
+                <strong>{{ record.status }}</strong>
+            </div>
+            <div>
+                <span>Opened</span>
+                <strong>{{ record.opened_at }}</strong>
+            </div>
+            <div>
+                <span>Opened By</span>
+                <strong>{{ record.opened_by }}</strong>
+            </div>
+            <div>
+                <span>Closed</span>
+                <strong>{{ record.closed_at }}</strong>
+            </div>
+            <div>
+                <span>Closed By</span>
+                <strong>{{ record.closed_by }}</strong>
+            </div>
+            <div>
+                <span>Final Status</span>
+                <strong>{{ record.final_status }}</strong>
+            </div>
+            <div>
+                <span>Final Condition</span>
+                <strong>{{ record.final_condition }}</strong>
+            </div>
+        </div>
+
+        <div class="mt-detail-box">
+            <span>Reported Problem</span>
+            <p>{{ record.problem }}</p>
+        </div>
+
+        <div class="mt-detail-box">
+            <span>Action Taken / Repair Notes</span>
+            <p>{{ record.action_taken }}</p>
+        </div>
+
+        <div class="mt-modal-actions">
+            <a href="#" class="mt-btn mt-btn-outline">Close</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% endfor %}
+
+{% endblock %}

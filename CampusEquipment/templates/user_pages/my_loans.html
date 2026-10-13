@@ -1,0 +1,274 @@
+
+{% extends 'base_user.html' %}
+{% load static %}
+
+{% block title %}CampusGear | My Loans{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_loans.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="ul-page">
+
+    <!-- PAGE HEADER -->
+    <header class="ul-header">
+        <h1>My Loans</h1>
+        <p>Equipment released to you. Only your own loans are shown.</p>
+    </header>
+
+    <!-- SUMMARY CARDS -->
+    <div class="ul-stats">
+
+        <div class="ul-stat">
+            <div class="ul-stat-icon ul-icon-green">
+                <i class="icon icon-package-check" aria-hidden="true"></i>
+            </div>
+
+            <div class="ul-stat-info">
+                <span>Active Loans</span>
+                <strong>{{ stats.active }}</strong>
+            </div>
+        </div>
+
+        <div class="ul-stat">
+            <div class="ul-stat-icon ul-icon-red">
+                <i class="icon icon-triangle-alert" aria-hidden="true"></i>
+            </div>
+
+            <div class="ul-stat-info">
+                <span>Overdue Loans</span>
+                <strong>{{ stats.overdue }}</strong>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- STATUS FILTER -->
+    <form method="get" class="ul-filters">
+        <label for="loan-status">Status</label>
+
+        <select id="loan-status" name="status">
+            <option value="all"
+                {% if status_filter == 'all' %}selected{% endif %}>
+                All
+            </option>
+
+            {% for status in status_options %}
+            <option value="{{ status }}"
+                {% if status_filter == status %}selected{% endif %}>
+                {{ status }}
+            </option>
+            {% endfor %}
+        </select>
+
+        <button type="submit" class="ul-btn ul-btn-primary">
+            Apply
+        </button>
+
+        <a href="{% url 'my_loans_preview' %}"
+           class="ul-btn ul-btn-outline">
+            Reset
+        </a>
+    </form>
+
+    <!-- LOAN HISTORY TABLE -->
+    <section class="ul-card">
+
+        <div class="ul-card-heading">
+            <h2>Loan History</h2>
+            <p>Track issued equipment, due dates, and returns.</p>
+        </div>
+
+        <div class="ul-table-wrap">
+            <table class="ul-table">
+
+                <thead>
+                    <tr>
+                        <th>Loan No.</th>
+                        <th>Request No.</th>
+                        <th>Equipment</th>
+                        <th>Released</th>
+                        <th>Due Date</th>
+                        <th>Units</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for loan in page_obj %}
+
+                    <tr>
+                        <td class="ul-code">{{ loan.code }}</td>
+
+                        <td>{{ loan.request_code }}</td>
+
+                        <td>
+                            <div class="ul-equipment-list">
+                                {% for item in loan.items %}
+                                    <span>
+                                        {{ item.quantity }} × {{ item.name }}
+                                    </span>
+                                {% endfor %}
+                            </div>
+                        </td>
+
+                        <td>{{ loan.release_date|date:"M d, Y" }}</td>
+
+                        <td>{{ loan.due_date|date:"M d, Y" }}</td>
+
+                        <td>
+                            <div class="ul-unit-count">
+                                <strong>
+                                    {{ loan.returned_count }}/{{ loan.total_units }}
+                                    returned
+                                </strong>
+                                {% if loan.outstanding_count %}
+                                <small>
+                                    {{ loan.outstanding_count }}
+                                    outstanding
+                                </small>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <td>
+                            {% include 'components/status_badge.html' with status=loan.status %}
+                        </td>
+
+                        <td>
+                            <a href="#loan-{{ loan.id }}"
+                               class="ul-btn ul-btn-outline ul-btn-small">
+                                Details
+                            </a>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+                    {% include 'components/empty_row.html' with colspan="8" title="No loans found for the selected status." %}
+                    {% endfor %}
+                </tbody>
+
+            </table>
+        </div>
+
+        <!-- PAGINATION -->
+        {% include 'components/pagination.html' %}
+
+    </section>
+</div>
+
+<!-- VIEW LOAN DETAILS MODALS -->
+{% for loan in page_obj %}
+
+<div id="loan-{{ loan.id }}" class="ul-overlay">
+    <div class="ul-modal"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="loan-title-{{ loan.id }}">
+
+        <div class="ul-modal-header">
+            <div>
+                <span class="ul-eyebrow">EQUIPMENT LOAN</span>
+                <h2 id="loan-title-{{ loan.id }}">
+                    Loan Details
+                </h2>
+                <p>{{ loan.code }}</p>
+            </div>
+
+            <a href="#" class="ul-modal-close"
+               aria-label="Close details">
+                &times;
+            </a>
+        </div>
+
+        <div class="ul-detail-grid">
+            <div>
+                <span>Loan Number</span>
+                <strong>{{ loan.code }}</strong>
+            </div>
+
+            <div>
+                <span>Request Number</span>
+                <strong>{{ loan.request_code }}</strong>
+            </div>
+
+            <div>
+                <span>Release Date</span>
+                <strong>{{ loan.release_date|date:"M d, Y" }}</strong>
+            </div>
+
+            <div>
+                <span>Due Date</span>
+                <strong>{{ loan.due_date|date:"M d, Y" }}</strong>
+            </div>
+
+            <div>
+                <span>Status</span>
+                <strong>{{ loan.status }}</strong>
+            </div>
+
+            <div>
+                <span>Outstanding Units</span>
+                <strong>{{ loan.outstanding_count }}</strong>
+            </div>
+        </div>
+
+        {% if loan.status == 'Overdue' %}
+        <div class="ul-overdue-warning">
+            <i class="icon icon-triangle-alert"
+               aria-hidden="true"></i>
+
+            <p>
+                This loan is overdue by
+                <strong>{{ loan.days_late }} day(s)</strong>.
+                Please coordinate with the equipment administrator.
+            </p>
+        </div>
+        {% endif %}
+
+        <div class="ul-modal-section">
+            <h3>Equipment Units</h3>
+
+            {% for unit in loan.units %}
+            <div class="ul-unit-row">
+
+                <div class="ul-unit-main">
+                    <strong>{{ unit.item_name }}</strong>
+                    <span>Asset Code: {{ unit.asset_code }}</span>
+                </div>
+
+                <div class="ul-unit-meta">
+                    {% if unit.returned_date %}
+                        {% include 'components/status_badge.html' with status="Returned" %}
+
+                        <small>
+                            {{ unit.returned_date|date:"M d, Y" }}
+                        </small>
+
+                        <small>
+                            Condition: {{ unit.return_condition }}
+                        </small>
+                    {% else %}
+                        {% include 'components/status_badge.html' with status="Open" label="Outstanding" %}
+                    {% endif %}
+                </div>
+
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="ul-modal-footer">
+            <a href="#" class="ul-btn ul-btn-outline">
+                Close
+            </a>
+        </div>
+
+    </div>
+</div>
+
+{% endfor %}
+
+{% endblock %}

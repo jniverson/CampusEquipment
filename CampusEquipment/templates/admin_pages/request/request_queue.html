@@ -1,0 +1,202 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/request.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="rq-page">
+
+    <!-- PAGE HEADER -->
+    <div class="rq-header">
+        <div>
+            <h1>Request Review &amp; Approval</h1>
+            <p>
+                Review borrowing requests and manage
+                equipment approvals.
+            </p>
+        </div>
+    </div>
+
+    <!-- MAIN CARD -->
+    <div class="rq-card">
+
+        <!-- SEARCH AND FILTERS -->
+        <form method="get" class="rq-toolbar">
+
+            <!-- SEARCH -->
+            <div class="rq-search">
+
+                <label for="request-search">
+                    Search Requests
+                </label>
+
+                <input
+                    id="request-search"
+                    type="search"
+                    name="q"
+                    value="{{ search_query }}"
+                    placeholder="Search request, borrower, or equipment">
+
+            </div>
+
+            <!-- STATUS FILTER -->
+            <div class="rq-filter">
+
+                <label for="request-status">
+                    Status
+                </label>
+
+                <select id="request-status" name="status">
+
+                    <option value="all"
+                        {% if status_filter == 'all' %}selected{% endif %}>
+                        All Status
+                    </option>
+
+                    {% for status in status_options %}
+
+                    <option value="{{ status }}"
+                        {% if status_filter == status %}selected{% endif %}>
+                        {{ status }}
+                    </option>
+
+                    {% endfor %}
+
+                </select>
+            </div>
+
+            <!-- REQUEST DATE -->
+            <div class="rq-filter">
+
+                <label for="request-date">
+                    Request Date
+                </label>
+
+                <input
+                    id="request-date"
+                    type="date"
+                    name="date"
+                    value="{{ selected_date }}">
+
+            </div>
+
+            <!-- APPLY FILTERS -->
+            <button
+                class="rq-button rq-button-primary"
+                type="submit">
+                Apply Filters
+            </button>
+
+            <!-- RESET -->
+            <a class="rq-button rq-button-outline"
+               href="{% url 'request_queue_preview' %}">
+                Reset
+            </a>
+
+        </form>
+
+        <!-- REQUEST TABLE -->
+        <div class="rq-table-wrap">
+
+            <table class="rq-table">
+
+                <thead>
+                    <tr>
+                        <th>Request ID</th>
+                        <th>Borrower</th>
+                        <th>Requested Equipment</th>
+                        <th>Date Requested</th>
+                        <th>Return By</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for borrowing in requests %}
+
+                    <tr>
+
+                        <!-- REQUEST ID -->
+                        <td class="rq-id">
+                            {{ borrowing.code }}
+                        </td>
+
+                        <!-- BORROWER -->
+                        <td>
+                            {{ borrowing.borrower }}
+                        </td>
+
+                        <!-- EQUIPMENT -->
+                        <td>
+                            <div class="rq-item-list">
+
+                                {% for item in borrowing.items %}
+
+                                <span>
+                                    {{ item.name }} × {{ item.quantity }}
+                                </span>
+
+                                {% endfor %}
+
+                            </div>
+                        </td>
+
+                        <!-- REQUEST DATE -->
+                        <td>
+                            {{ borrowing.request_date }}
+                        </td>
+
+                        <!-- RETURN DATE -->
+                        <td>
+                            {{ borrowing.return_date }}
+                        </td>
+
+                        <!-- STATUS BADGE -->
+                        <td>
+                            {% include 'components/status_badge.html' with status=borrowing.status %}
+                        </td>
+
+                        <!-- ACTION BUTTON -->
+                        <td>
+
+                            <a href="{% url 'request_details_preview' borrowing.id %}"
+                               class="rq-button rq-button-view">
+
+                                {% if borrowing.status == 'Pending' %}
+                                    Review
+                                {% else %}
+                                    View
+                                {% endif %}
+
+                            </a>
+
+                        </td>
+
+                    </tr>
+
+                    {% empty %}
+
+                    {% include 'components/empty_row.html' with colspan="7" title="No borrowing requests found." %}
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        <!-- PAGINATION -->
+        {% include 'components/pagination.html' %}
+
+    </div>
+
+</div>
+
+{% endblock %}

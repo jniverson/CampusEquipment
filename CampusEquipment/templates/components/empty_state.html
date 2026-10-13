@@ -1,0 +1,5 @@
+{# Empty state block. usage: {% include 'components/empty_state.html' with title="Nothing here yet." hint="Optional help text." %} #}
+<div class="ui-empty" role="status">
+    <strong>{{ title }}</strong>
+    {% if hint %}<p>{{ hint }}</p>{% endif %}
+</div>

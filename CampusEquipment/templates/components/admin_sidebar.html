@@ -1,0 +1,165 @@
+
+<aside class="sidebar">
+
+    <div class="sidebar-brand">
+        CampusGear
+    </div>
+
+    <nav class="sidebar-nav">
+
+        <!-- DASHBOARD -->
+        <a href="{% url 'dashboard_preview' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'dashboard_preview' %}active{% endif %}">
+            <i class="icon icon-layout-dashboard"></i>
+            <span>Dashboard</span>
+        </a>
+
+        <!-- ACCOUNT -->
+        <a href="{% url 'accounts_preview' %}"
+           class="nav-link {% if request.resolver_match.url_name == 'accounts_preview' or request.resolver_match.url_name == 'account_history_preview' %}active{% endif %}">
+            <i class="icon icon-user-round"></i>
+            <span>Account</span>
+        </a>
+
+        <!-- CATALOG -->
+
+
+        <a href="{% url 'categories_preview' %}"
+           class="nav-link
+           {% if request.resolver_match.url_name == 'categories_preview' or request.resolver_match.url_name == 'catalog_items_preview' or request.resolver_match.url_name == 'physical_units_preview' %}
+           active
+           {% endif %}">
+
+            <i class="icon icon-boxes" aria-hidden="true"></i>
+            <span>Catalog & Units</span>
+        </a>
+
+
+
+        <div class="nav-section">OPERATIONS</div>
+
+        <!-- REQUEST QUEUE -->
+
+        <a href="{% url 'request_queue_preview' %}"
+           class="nav-link
+           {% if request.resolver_match.url_name == 'request_queue_preview' or request.resolver_match.url_name == 'request_details_preview' %}
+           active
+           {% endif %}">
+
+            <i class="icon icon-clipboard-list"
+               aria-hidden="true"></i>
+
+            <span>Request Queue</span>
+        </a>
+
+
+        <!-- EQUIPMENT RELEASE -->
+        <a href="{% url 'equipment_release_preview' %}"
+           class="nav-link
+           {% if request.resolver_match.url_name == 'equipment_release_preview' %}
+           active
+           {% endif %}">
+
+            <i class="icon icon-package-check" aria-hidden="true"></i>
+
+            <span>Equipment Release</span>
+        </a>
+        <!-- RETURNS -->
+
+        <!-- RETURNS & OVERDUE -->
+        <a href="{% url 'returns_preview' %}"
+           class="nav-link
+           {% if request.resolver_match.url_name == 'returns_preview' %}
+           active
+           {% endif %}">
+
+            <i class="icon icon-corner-down-left"
+               aria-hidden="true"></i>
+
+            <span>Returns &amp; Overdue</span>
+        </a>
+
+
+        <!-- MAINTENANCE -->
+        <a href="{% url 'maintenance_preview' %}"
+           class="nav-link
+           {% if request.resolver_match.url_name == 'maintenance_preview' %}
+           active
+           {% endif %}">
+
+            <i class="icon icon-wrench" aria-hidden="true"></i>
+
+            <span>Under Maintenance</span>
+        </a>
+
+
+        <div class="nav-section">INSIGHTS</div>
+
+        <!-- REPORTS -->
+
+
+        <a href="{% url 'reports_preview' %}"
+           class="nav-link
+           {% if request.resolver_match.url_name == 'reports_preview' or request.resolver_match.url_name == 'reports_export_preview' %}
+           active
+           {% endif %}">
+
+            <i class="icon icon-clipboard"
+               aria-hidden="true"></i>
+
+            <span>Reports</span>
+        </a>
+
+
+        <!-- SETTINGS -->
+
+
+        <a href="{% url 'operational_settings_preview' %}"
+           class="nav-link
+           {% if request.resolver_match.url_name == 'operational_settings_preview' %}
+           active
+           {% endif %}">
+
+            <i class="icon icon-settings"
+               aria-hidden="true"></i>
+
+            <span>Settings</span>
+        </a>
+
+
+
+        <!-- AUDIT LOGS -->
+        <a href="{% url 'audit_logs_preview' %}"
+           class="nav-link
+           {% if request.resolver_match.url_name == 'audit_logs_preview' %}
+           active
+           {% endif %}">
+
+            <i class="icon icon-file-search"
+               aria-hidden="true"></i>
+
+            <span>Audit Logs</span>
+        </a>
+
+
+    </nav>
+
+
+        <!-- LOGOUT -->
+
+        <!-- LOGOUT: outside sidebar-nav -->
+        <div class="sidebar-logout">
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+
+                <button type="submit" class="logout-btn">
+                    <i class="icon icon-log-out" aria-hidden="true"></i>
+                    <span>Log Out</span>
+                </button>
+            </form>
+        </div>
+
+
+
+
+</aside>

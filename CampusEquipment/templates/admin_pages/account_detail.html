@@ -1,0 +1,95 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<a href="{% url 'accounts_preview' %}" class="back-link">
+    ← Back to Account Management
+</a>
+
+<div class="accounts-header">
+    <h1>Account Details</h1>
+    <p>Borrower information and request history</p>
+</div>
+
+<section class="account-detail-card">
+    <h2 class="detail-heading">User Information</h2>
+
+    <div class="account-info-grid">
+        <div>
+            <p class="info-label">Full Name</p>
+            <p class="info-value">{{ account.name }}</p>
+        </div>
+
+        <div>
+            <p class="info-label">Email</p>
+            <p class="info-value">{{ account.email }}</p>
+        </div>
+
+        <div>
+            <p class="info-label">Contact Number</p>
+            <p class="info-value">
+                {{ account.contact|default:"Not provided" }}
+            </p>
+        </div>
+
+        <div>
+            <p class="info-label">Account Status</p>
+            {% if account.is_active %}
+                {% include 'components/status_badge.html' with status="Active" %}
+            {% else %}
+                {% include 'components/status_badge.html' with status="Inactive" %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="preview-notice">
+        {% if account.is_active %}
+            Deactivate Account — Confirmation Preview:
+            This action would block future sign-ins and
+            transactions without deleting existing records.
+        {% else %}
+            Activate Account — Confirmation Preview:
+            This action would restore account access.
+        {% endif %}
+
+        <p style="margin-top: 8px;">
+            No account changes can be made in UI preview mode.
+        </p>
+    </div>
+</section>
+
+<section class="accounts-card">
+    <h2 class="detail-heading">Request History</h2>
+
+    <div class="accounts-table-scroll">
+        <table class="accounts-table">
+            <thead>
+                <tr>
+                    <th>Request ID</th>
+                    <th>Requested Date</th>
+                    <th>Equipment</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in history %}
+                <tr>
+                    <td>{{ request.id }}</td>
+                    <td>{{ request.date }}</td>
+                    <td>{{ request.items }}</td>
+                    <td>{{ request.status }}</td>
+                </tr>
+                {% empty %}
+                {% include 'components/empty_row.html' with colspan="4" title="No request history found." %}
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,209 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/returns.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="returns-page">
+    <header class="returns-header">
+        <h1>Returns &amp; Overdue Monitoring</h1>
+        <p>Record returns per physical unit and monitor outstanding equipment.</p>
+    </header>
+
+    <section class="returns-card">
+        <form method="get" class="returns-toolbar">
+            <div class="returns-search">
+                <label for="returns-search">Search Loans</label>
+                <input id="returns-search" type="search" name="q"
+                       value="{{ search_query }}"
+                       placeholder="Search loan ID or borrower">
+            </div>
+
+            <div class="returns-filter">
+                <label for="returns-status">Status</label>
+                <select id="returns-status" name="status">
+                    <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+                    {% for status in status_options %}
+                    <option value="{{ status }}" {% if status_filter == status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <button class="returns-btn returns-btn-primary" type="submit">Apply</button>
+            <a class="returns-btn returns-btn-outline"
+               href="{% url 'returns_preview' %}">Reset</a>
+        </form>
+
+        <div class="returns-table-wrap">
+            <table class="returns-table">
+                <thead>
+                    <tr>
+                        <th>Loan No.</th>
+                        <th>Borrower</th>
+                        <th>Released</th>
+                        <th>Due Date</th>
+                        <th>Units</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for loan in loans %}
+                    <tr>
+                        <td class="returns-code">{{ loan.code }}</td>
+                        <td>{{ loan.borrower }}</td>
+                        <td>{{ loan.release_date }}</td>
+                        <td>{{ loan.due_date }}</td>
+                        <td>
+                            <strong>{{ loan.outstanding_count }}</strong>
+                            of {{ loan.total_count }} outstanding
+                        </td>
+                        <td>
+                            {% include 'components/status_badge.html' with status=loan.display_status %}
+                        </td>
+                        <td>
+                            {% if loan.outstanding_count > 0 %}
+                            <a class="returns-btn returns-btn-primary returns-small"
+                               href="#return-{{ loan.id }}">
+                                Record Return
+                            </a>
+                            {% else %}
+                            <a class="returns-btn returns-btn-outline returns-small"
+                               href="#return-{{ loan.id }}">
+                                View Details
+                            </a>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    {% include 'components/empty_row.html' with colspan="7" title="No matching loan records found." %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'components/pagination.html' %}
+    </section>
+</div>
+
+<!-- RETURN DETAILS / RECORD RETURN MODALS -->
+{% for loan in loans %}
+<div class="returns-overlay" id="return-{{ loan.id }}">
+    <div class="returns-modal" role="dialog" aria-modal="true"
+         aria-labelledby="return-title-{{ loan.id }}">
+
+        <header class="returns-modal-header">
+            <div>
+                <span class="returns-eyebrow">EQUIPMENT RETURN</span>
+                <h2 id="return-title-{{ loan.id }}">
+                    {% if loan.outstanding_count > 0 %}
+                        Record Equipment Return
+                    {% else %}
+                        Completed Loan Details
+                    {% endif %}
+                </h2>
+                <p>{{ loan.code }} · {{ loan.borrower }}</p>
+            </div>
+
+            <a href="#" class="returns-modal-close" aria-label="Close">×</a>
+        </header>
+
+        <div class="returns-summary">
+            <div>
+                <span>Release Date</span>
+                <strong>{{ loan.release_date }}</strong>
+            </div>
+            <div>
+                <span>Due Date</span>
+                <strong>{{ loan.due_date }}</strong>
+            </div>
+            <div>
+                <span>Outstanding</span>
+                <strong>{{ loan.outstanding_count }} / {{ loan.total_count }}</strong>
+            </div>
+            <div>
+                <span>Status</span>
+                {% include 'components/status_badge.html' with status=loan.display_status %}
+            </div>
+        </div>
+
+        <form method="post" action="">
+        {% csrf_token %}
+        <input type="hidden" name="decision" value="record_return">
+        <input type="hidden" name="loan_id" value="{{ loan.id }}">
+
+        <h3 class="returns-subheading">Equipment Units</h3>
+
+        <div class="returns-unit-list">
+            {% for unit in loan.units %}
+
+            <div class="returns-unit {% if unit.returned_at %}returns-unit-complete{% endif %}">
+                <div class="returns-unit-top">
+                    {% if unit.returned_at %}
+                    <input type="checkbox" checked disabled
+                           aria-label="{{ unit.asset_code }} already returned">
+                    {% else %}
+                    <input type="checkbox"
+                           name="returned_units"
+                           value="{{ unit.asset_code }}"
+                           aria-label="Select {{ unit.asset_code }} for return">
+                    {% endif %}
+
+                    <div class="returns-unit-info">
+                        <strong>{{ unit.asset_code }}</strong>
+                        <span>{{ unit.item_name }}</span>
+                    </div>
+
+                    {% if unit.returned_at %}
+                    {% include 'components/status_badge.html' with status="Returned" %}
+                    {% else %}
+                    {% include 'components/status_badge.html' with status="Open" label="Outstanding" %}
+                    {% endif %}
+                </div>
+
+                {% if unit.returned_at %}
+                <p class="returns-unit-note">
+                    Returned {{ unit.returned_at }} · Condition: {{ unit.condition }}
+                </p>
+                {% else %}
+                <div class="returns-condition">
+                    <label for="condition-{{ loan.id }}-{{ unit.asset_code }}">
+                        Return Condition
+                    </label>
+                    <select id="condition-{{ loan.id }}-{{ unit.asset_code }}"
+                            name="condition_{{ unit.asset_code }}">
+                        <option value="">Select condition</option>
+                        <option>Good</option>
+                        <option>Fair</option>
+                        <option>Damaged</option>
+                    </select>
+                </div>
+                {% endif %}
+            </div>
+
+            {% endfor %}
+        </div>
+
+        {% if loan.outstanding_count > 0 %}
+
+        {% endif %}
+
+        <footer class="returns-modal-actions">
+            <a href="#" class="returns-btn returns-btn-outline">Close</a>
+            {% if loan.outstanding_count > 0 %}
+            <button class="returns-btn returns-btn-primary"
+                    type="submit">
+                Confirm Return
+            </button>
+            {% endif %}
+        </footer>
+        </form>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

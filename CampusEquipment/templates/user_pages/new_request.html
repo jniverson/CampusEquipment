@@ -1,0 +1,166 @@
+
+{% extends 'base_user.html' %}
+{% load static %}
+
+{% block title %}CampusGear | New Request{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/user_request.css' %}">
+{% endblock %}
+
+{% block content %}
+<div class="nr-page">
+    <header class="nr-header">
+        <h1>New Borrowing Request</h1>
+        <p>Request up to 3 different equipment items.</p>
+    </header>
+
+    <section class="nr-card">
+        <form method="post" action="{% url 'user_new_request_preview' %}">
+            {% csrf_token %}
+
+            <div class="nr-section-header">
+                <h2>Equipment Items</h2>
+                <span id="itemCounter">{{ rows|length }}/3 items</span>
+            </div>
+
+            {% for row in rows %}
+            <div class="nr-item">
+                <div class="nr-item-heading">
+                    <strong class="nr-item-title">
+                        Item {{ forloop.counter }}
+                    </strong>
+
+                    {% if rows|length > 1 %}
+                    <button type="submit"
+                            name="action"
+                            value="remove_{{ forloop.counter0 }}"
+                            class="nr-remove-btn"
+                            formnovalidate>
+                        <i class="icon icon-trash-2"
+                           aria-hidden="true"></i>
+                        Remove
+                    </button>
+                    {% endif %}
+                </div>
+
+                <div class="nr-item-fields">
+                    <div class="nr-field">
+                        <label for="equipment_{{ forloop.counter0 }}">
+                            Equipment
+                        </label>
+                        <select
+                            id="equipment_{{ forloop.counter0 }}"
+                            name="equipment_{{ forloop.counter0 }}">
+                            <option value="">Select equipment</option>
+
+                            {% for item in equipment_options %}
+                            <option value="{{ item.id }}"
+                                {% if row.item_id == item.id|stringformat:"s" %}selected{% endif %}>
+                                {{ item.name }}
+                                ({{ item.available_count }} available)
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="nr-field">
+                        <label for="quantity_{{ forloop.counter0 }}">
+                            Quantity
+                        </label>
+                        <select
+                            id="quantity_{{ forloop.counter0 }}"
+                            name="quantity_{{ forloop.counter0 }}">
+                            {% for n in quantity_choices %}
+                            <option value="{{ n }}"
+                                {% if row.quantity == n|stringformat:"s" %}selected{% endif %}>
+                                {{ n }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            <input type="hidden" name="row_count"
+                   value="{{ rows|length }}">
+
+            <button type="submit"
+                    name="action"
+                    value="add"
+                    class="nr-add-btn"
+                    formnovalidate
+                    {% if rows|length >= 3 or rows|length >= equipment_options|length %}disabled{% endif %}>
+                <i class="icon icon-plus" aria-hidden="true"></i>
+                Add New Item
+            </button>
+
+            <p class="nr-helper">
+                Maximum of 3 different items, up to
+                {{ max_quantity }} units each,
+                subject to availability.
+            </p>
+
+            <div class="nr-section-heading">
+                <h2>Borrowing Details</h2>
+            </div>
+
+            <div class="nr-field">
+                <label for="returnDate">
+                    Desired Return Date
+                    <span class="nr-required">*</span>
+                </label>
+                <input
+                    type="date"
+                    id="returnDate"
+                    name="desired_return_date"
+                    value="{{ return_date }}"
+                    min="{{ min_date }}"
+                    max="{{ max_date }}">
+                <small>
+                    Maximum borrowing period:
+                    {{ max_loan_days }} days.
+                </small>
+            </div>
+
+            <div class="nr-field" style="margin-top:22px;">
+                <label for="purpose">
+                    Purpose
+                    <span class="nr-required">*</span>
+                </label>
+                <textarea
+                    id="purpose"
+                    name="purpose"
+                    rows="4"
+                    maxlength="500"
+                    placeholder="e.g. For classroom presentation">{{ purpose }}</textarea>
+            </div>
+
+            {% if message %}
+            <div class="nr-message{% if validation_passed %} success{% endif %}"
+                 role="status">
+                {{ message }}
+            </div>
+            {% endif %}
+
+            <div class="nr-actions">
+                <button type="submit"
+                        name="action"
+                        value="reset"
+                        class="nr-reset-btn"
+                        formnovalidate>
+                    Reset
+                </button>
+
+                <button type="submit"
+                        name="action"
+                        value="validate"
+                        class="nr-submit-btn">
+                    Submit Request
+                </button>
+            </div>
+        </form>
+    </section>
+</div>
+{% endblock %}

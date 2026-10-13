@@ -1,0 +1,132 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Register | Campus Equipment System</title>
+
+    <link rel="stylesheet"
+          href="{% static 'css/auth.css' %}">
+</head>
+<body>
+
+<div class="login-layout">
+
+    <!-- LEFT PANEL -->
+    <section class="brand-panel">
+        <div class="brand-content">
+            <h1>
+                Campus Equipment Borrowing
+                <br>& Inventory System
+            </h1>
+            <p>
+                Borrow smarter. Manage equipment efficiently.
+            </p>
+        </div>
+    </section>
+
+    <!-- RIGHT PANEL -->
+    <section class="form-panel">
+
+        <div class="register-card">
+
+            <h2>Register</h2>
+            <p class="subtitle">
+                Registration is for borrowers only.
+            </p>
+
+            {% if form.errors %}
+                <div class="error-message" role="alert">
+                    Please fix the following:
+                    <ul>
+                        {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+                        {% for field in form %}{% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}{% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- FULL NAME -->
+                <label for="full_name">Full name</label>
+                <input
+                    type="text"
+                    id="full_name"
+                    name="full_name"
+                    value="{{ form.full_name.value|default:'' }}"
+                    placeholder="Enter your full name"
+                    autocomplete="name"
+                    required
+                >
+
+                <!-- CONTACT NUMBER -->
+                <label for="contact_number">Contact No</label>
+                <input
+                    type="tel"
+                    id="contact_number"
+                    name="contact_number"
+                    value="{{ form.contact_number.value|default:'' }}"
+                    placeholder="Enter contact number"
+                    autocomplete="tel"
+                >
+
+                <!-- EMAIL -->
+                <label for="email">Email</label>
+                <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value="{{ form.email.value|default:'' }}"
+                    placeholder="Enter your email"
+                    autocomplete="email"
+                    required
+                >
+
+                <!-- PASSWORD -->
+                <label for="password1">Password</label>
+                <input
+                    type="password"
+                    id="password1"
+                    name="password1"
+                    placeholder="Create a password"
+                    autocomplete="new-password"
+                    aria-describedby="password-hint"
+                    required
+                >
+                <small id="password-hint" class="field-hint">Use at least 8 characters.</small>
+
+                <!-- CONFIRM PASSWORD -->
+                <label for="password2">
+                    Confirm Password
+                </label>
+                <input
+                    type="password"
+                    id="password2"
+                    name="password2"
+                    placeholder="Confirm password"
+                    autocomplete="new-password"
+                    required
+                >
+
+                <button type="submit" class="register-btn">
+                    Register
+                </button>
+            </form>
+
+            <p class="signin-text">
+                Already have an account?
+                <a href="{% url 'login' %}">Sign in</a>
+            </p>
+
+        </div>
+    </section>
+
+</div>
+
+</body>
+</html>

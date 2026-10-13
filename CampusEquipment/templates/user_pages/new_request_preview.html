@@ -1,0 +1,48 @@
+
+{% extends 'base_user.html' %}
+
+{% block title %}CampusGear | New Request{% endblock %}
+
+{% block content %}
+
+<div class="user-page-header">
+    <h1>New Request</h1>
+    <p>Prepare a new equipment borrowing request.</p>
+</div>
+
+<div class="user-card">
+
+    {% if selected_item %}
+
+        <h2 style="font-size: 17px; margin-bottom: 12px;">
+            Selected Equipment
+        </h2>
+
+        <p style="font-size: 14px;">
+            {{ selected_item.name }}
+        </p>
+
+        <p style="margin-top: 12px; font-size: 12px;
+                  color: #667085;">
+            This is a preview. The complete request
+            form will be added in the next step.
+        </p>
+
+    {% else %}
+
+        <p style="font-size: 13px; color: #667085;">
+            Select equipment from Browse Equipment
+            or start a new request.
+        </p>
+
+    {% endif %}
+
+    <a href="{% url 'browse_equipment_preview' %}"
+       class="user-btn-primary"
+       style="margin-top: 20px;">
+        Back to Browse Equipment
+    </a>
+
+</div>
+
+{% endblock %}

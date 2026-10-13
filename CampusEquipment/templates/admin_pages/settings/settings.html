@@ -1,0 +1,103 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/settings.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="os-page">
+
+    <!-- PAGE HEADER -->
+    <header class="os-page-header">
+        <h1>Operational Settings</h1>
+        <p>Configure borrowing rules and request limits.</p>
+    </header>
+
+    <!-- SETTINGS CARD -->
+    <section class="os-card">
+
+        <div class="os-card-header">
+            <h2>Borrowing Settings</h2>
+            <p>
+                Manage the rules applied when users submit
+                borrowing requests.
+            </p>
+        </div>
+
+        <form method="post" class="os-form">
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="os-error" role="alert">{{ form.non_field_errors|join:" " }}</div>
+            {% endif %}
+
+            <!-- MAXIMUM LOAN DURATION -->
+            <div class="os-field">
+                <label for="max-loan-duration">
+                    Maximum Loan Duration (days)
+                </label>
+
+                <input
+                    id="max-loan-duration"
+                    name="max_loan_duration"
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    value="{{ form.max_loan_duration.value|default:settings_data.max_loan_duration }}"
+                    {% if form.max_loan_duration.errors %}aria-invalid="true" aria-describedby="max-loan-duration-error"{% endif %}>
+
+                {% if form.max_loan_duration.errors %}
+                <div class="os-error" id="max-loan-duration-error" role="alert">{{ form.max_loan_duration.errors|join:" " }}</div>
+                {% endif %}
+
+                <small>
+                    Maximum number of days a borrower
+                    may keep equipment.
+                </small>
+            </div>
+
+            <!-- MAXIMUM REQUESTED QUANTITY -->
+            <div class="os-field">
+                <label for="max-request-quantity">
+                    Maximum Requested Quantity
+                </label>
+
+                <input
+                    id="max-request-quantity"
+                    name="max_request_quantity"
+                    type="number"
+                    min="1"
+                    step="1"
+                    required
+                    value="{{ form.max_request_quantity.value|default:settings_data.max_request_quantity }}"
+                    {% if form.max_request_quantity.errors %}aria-invalid="true" aria-describedby="max-request-quantity-error"{% endif %}>
+
+                {% if form.max_request_quantity.errors %}
+                <div class="os-error" id="max-request-quantity-error" role="alert">{{ form.max_request_quantity.errors|join:" " }}</div>
+                {% endif %}
+
+                <small>
+                    Maximum number of units that can be requested
+                    for each item in a borrowing request.
+                </small>
+            </div>
+
+
+            <div class="os-form-footer">
+                <button
+                    type="submit"
+                    class="os-btn os-btn-primary">
+                    Save Settings
+                </button>
+            </div>
+
+        </form>
+
+    </section>
+
+</div>
+{% endblock %}

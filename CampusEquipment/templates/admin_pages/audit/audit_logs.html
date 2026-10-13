@@ -1,0 +1,165 @@
+
+{% extends 'base_admin.html' %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/audit_logs.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="audit-page">
+
+    <header class="audit-header">
+        <h1>Audit Logs</h1>
+        <p>Review system activities and important user actions.</p>
+    </header>
+
+
+
+    <section class="audit-card">
+        <div class="audit-card-heading">
+            <div>
+                <h2>Activity History</h2>
+                <p>Recorded actions across the borrowing and inventory system.</p>
+            </div>
+        </div>
+
+        <form method="get" class="audit-filters">
+            <div class="audit-field audit-search">
+                <label for="audit-q">Search</label>
+                <input id="audit-q" type="search"
+                       name="q" value="{{ search_query }}"
+                       placeholder="Search user, action or reference">
+            </div>
+
+            <div class="audit-field">
+                <label for="audit-action">Action</label>
+                <select id="audit-action" name="action">
+                    <option value="all">All Actions</option>
+                    {% for option in action_options %}
+                    <option value="{{ option }}"
+                        {% if action_filter == option %}selected{% endif %}>
+                        {{ option }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="audit-field">
+                <label for="audit-role">Performed By</label>
+                <select id="audit-role" name="role">
+                    <option value="all">All Roles</option>
+                    <option value="Admin"
+                        {% if role_filter == 'Admin' %}selected{% endif %}>
+                        Admin
+                    </option>
+                    <option value="Basic User"
+                        {% if role_filter == 'Basic User' %}selected{% endif %}>
+                        Basic User
+                    </option>
+                </select>
+            </div>
+
+            <button class="audit-btn audit-btn-primary"
+                    type="submit">Apply</button>
+            <a class="audit-btn audit-btn-outline"
+               href="{% url 'audit_logs_preview' %}">
+                Reset
+            </a>
+        </form>
+
+        <div class="audit-table-wrap">
+            <table class="audit-table">
+                <thead>
+                    <tr>
+                        <th>Date &amp; Time</th>
+                        <th>Performed By</th>
+                        <th>Role</th>
+                        <th>Action</th>
+                        <th>Reference</th>
+                        <th>Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.timestamp }}</td>
+                        <td class="audit-actor">{{ log.actor }}</td>
+                        <td>{{ log.role }}</td>
+                        <td>
+                            <span class="audit-action-badge">
+                                {{ log.action }}
+                            </span>
+                        </td>
+                        <td class="audit-ref">{{ log.reference }}</td>
+                        <td>
+                            <a href="#audit-{{ log.id }}"
+                               class="audit-btn audit-btn-outline audit-small">
+                                View
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    {% include 'components/empty_row.html' with colspan="6" title="No matching activity records found." %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        {% include 'components/pagination.html' %}
+    </section>
+</div>
+
+<!-- READ-ONLY LOG DETAILS -->
+{% for log in logs %}
+<div id="audit-{{ log.id }}" class="audit-overlay">
+    <div class="audit-modal" role="dialog" aria-modal="true"
+         aria-labelledby="audit-title-{{ log.id }}">
+
+        <div class="audit-modal-header">
+            <div>
+                <span class="audit-eyebrow">SYSTEM ACTIVITY</span>
+                <h2 id="audit-title-{{ log.id }}">Activity Details</h2>
+                <p>Log #{{ log.id }}</p>
+            </div>
+            <a href="#" class="audit-modal-close"
+               aria-label="Close">×</a>
+        </div>
+
+        <div class="audit-details-grid">
+            <div>
+                <span>Date &amp; Time</span>
+                <strong>{{ log.timestamp }}</strong>
+            </div>
+            <div>
+                <span>Performed By</span>
+                <strong>{{ log.actor }}</strong>
+            </div>
+            <div>
+                <span>Role</span>
+                <strong>{{ log.role }}</strong>
+            </div>
+            <div>
+                <span>Action</span>
+                <strong>{{ log.action }}</strong>
+            </div>
+            <div>
+                <span>Reference</span>
+                <strong>{{ log.reference }}</strong>
+            </div>
+        </div>
+
+        <div class="audit-description">
+            <span>Activity Description</span>
+            <p>{{ log.description }}</p>
+        </div>
+
+        <div class="audit-modal-actions">
+            <a href="#" class="audit-btn audit-btn-outline">Close</a>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% endblock %}

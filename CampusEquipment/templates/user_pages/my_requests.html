@@ -1,0 +1,290 @@
+
+{% extends 'base_user.html' %}
+{% load static %}
+
+{% block title %}CampusGear | My Requests{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet"
+      href="{% static 'css/user_my_requests.css' %}">
+{% endblock %}
+
+{% block content %}
+
+<div class="mr-page">
+
+    <header class="mr-header">
+        <h1>My Requests</h1>
+        <p>View your requests and cancel Pending or Approved requests.</p>
+    </header>
+
+    <section class="mr-card">
+
+        <!-- SEARCH AND FILTERS -->
+        <form method="get" class="mr-filters">
+
+            <div class="mr-search">
+                <i class="icon icon-search" aria-hidden="true"></i>
+                <input type="search"
+                       name="q"
+                       value="{{ search_query }}"
+                       placeholder="Search request number or equipment"
+                       aria-label="Search requests">
+            </div>
+
+            <select name="status" aria-label="Filter by status">
+                <option value="all">All Statuses</option>
+                {% for status in status_options %}
+                <option value="{{ status }}"
+                    {% if status_filter == status %}selected{% endif %}>
+                    {{ status }}
+                </option>
+                {% endfor %}
+            </select>
+
+            <button type="submit" class="mr-btn mr-btn-primary">
+                Apply
+            </button>
+
+            <a href="{% url 'my_requests_preview' %}"
+               class="mr-btn mr-btn-outline">
+                Reset
+            </a>
+
+        </form>
+
+        <!-- REQUESTS TABLE -->
+        <div class="mr-table-wrap">
+            <table class="mr-table">
+                <thead>
+                    <tr>
+                        <th>Request No.</th>
+                        <th>Items</th>
+                        <th>Requested Date</th>
+                        <th>Desired Return</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for borrowing in page_obj %}
+
+                    <tr>
+                        <td class="mr-request-code">
+                            {{ borrowing.code }}
+                        </td>
+
+                        <td>
+                            <div class="mr-items-cell">
+                                {% for item in borrowing.items %}
+                                    {% if forloop.counter <= 2 %}
+                                    <span>
+                                        {{ item.quantity }} × {{ item.name }}
+                                    </span>
+                                    {% endif %}
+                                {% endfor %}
+
+                                {% if borrowing.items|length > 2 %}
+                                <small>
+                                    +{{ borrowing.items|length|add:"-2" }}
+                                    more item
+                                </small>
+                                {% endif %}
+                            </div>
+                        </td>
+
+                        <td>{{ borrowing.requested_date }}</td>
+
+                        <td>{{ borrowing.return_date }}</td>
+
+                        <td>
+                            {% include 'components/status_badge.html' with status=borrowing.status %}
+                        </td>
+
+                        <td>
+                            <div class="mr-actions">
+
+                                <a href="#details-{{ borrowing.id }}"
+                                   class="mr-btn mr-btn-small mr-btn-outline">
+                                    Details
+                                </a>
+
+                                {% if borrowing.can_cancel %}
+                                <a href="#cancel-{{ borrowing.id }}"
+                                   class="mr-btn mr-btn-small mr-btn-danger-outline">
+                                    Cancel
+                                </a>
+                                {% endif %}
+
+                            </div>
+                        </td>
+                    </tr>
+
+                    {% empty %}
+
+                    {% include 'components/empty_row.html' with colspan="6" title="No matching requests found." %}
+
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- PAGINATION -->
+        {% include 'components/pagination.html' %}
+
+    </section>
+
+</div>
+
+<!-- ==================================
+     VIEW DETAILS AND CANCEL MODALS
+================================== -->
+
+{% for borrowing in page_obj %}
+
+<!-- VIEW DETAILS -->
+<div class="mr-overlay" id="details-{{ borrowing.id }}">
+    <div class="mr-modal" role="dialog"
+         aria-modal="true"
+         aria-labelledby="details-title-{{ borrowing.id }}">
+
+        <div class="mr-modal-header">
+            <div>
+                <span class="mr-eyebrow">BORROWING REQUEST</span>
+                <h2 id="details-title-{{ borrowing.id }}">
+                    Request Details
+                </h2>
+                <p>{{ borrowing.code }}</p>
+            </div>
+
+            <a href="#" class="mr-close" aria-label="Close">
+                &times;
+            </a>
+        </div>
+
+        <div class="mr-detail-grid">
+            <div>
+                <span>Requested Date</span>
+                <strong>{{ borrowing.requested_date }}</strong>
+            </div>
+
+            <div>
+                <span>Desired Return</span>
+                <strong>{{ borrowing.return_date }}</strong>
+            </div>
+
+            <div>
+                <span>Status</span>
+                <strong>{{ borrowing.status }}</strong>
+            </div>
+
+            <div>
+                <span>Request Number</span>
+                <strong>{{ borrowing.code }}</strong>
+            </div>
+        </div>
+
+        <div class="mr-detail-section">
+            <h3>Requested Equipment</h3>
+
+            {% for item in borrowing.items %}
+            <div class="mr-detail-item">
+                <span>{{ item.name }}</span>
+                <strong>× {{ item.quantity }}</strong>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="mr-detail-section">
+            <h3>Purpose</h3>
+            <p>{{ borrowing.purpose }}</p>
+        </div>
+
+        {% if borrowing.status == 'Rejected' and borrowing.reason %}
+        <div class="mr-rejection-box">
+            <strong>Rejection Reason</strong>
+            <p>{{ borrowing.reason }}</p>
+        </div>
+        {% endif %}
+
+        <div class="mr-modal-footer">
+            <a href="#" class="mr-btn mr-btn-outline">
+                Close
+            </a>
+
+            {% if borrowing.can_cancel %}
+            <a href="#cancel-{{ borrowing.id }}"
+               class="mr-btn mr-btn-danger-outline">
+                Cancel Request
+            </a>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+<!-- CANCEL CONFIRMATION -->
+{% if borrowing.can_cancel %}
+
+<div class="mr-overlay" id="cancel-{{ borrowing.id }}">
+    <div class="mr-modal mr-confirm-modal" role="dialog"
+         aria-modal="true"
+         aria-labelledby="cancel-title-{{ borrowing.id }}">
+
+        <div class="mr-modal-header">
+            <div>
+                <span class="mr-eyebrow">CONFIRMATION</span>
+                <h2 id="cancel-title-{{ borrowing.id }}">
+                    Cancel Request?
+                </h2>
+            </div>
+
+            <a href="#" class="mr-close" aria-label="Close">
+                &times;
+            </a>
+        </div>
+
+        <p class="mr-confirm-text">
+            Are you sure you want to cancel
+            <strong>{{ borrowing.code }}</strong>?
+            This action cannot be undone after cancellation.
+        </p>
+
+        <div class="mr-warning">
+            {% if borrowing.status == 'Approved' %}
+                Cancelling an Approved request will release
+                its reserved equipment units once processed
+                by the backend.
+            {% else %}
+                This Pending request will be withdrawn.
+            {% endif %}
+        </div>
+
+        <form method="post" action="">
+            {% csrf_token %}
+            <input type="hidden" name="decision" value="cancel">
+            <input type="hidden" name="request_id" value="{{ borrowing.id }}">
+
+            <div class="mr-modal-footer">
+                <a href="#" class="mr-btn mr-btn-outline">
+                    Keep Request
+                </a>
+
+                <button type="submit"
+                        class="mr-btn mr-btn-danger">
+                    Confirm Cancel
+                </button>
+            </div>
+        </form>
+
+
+
+    </div>
+</div>
+
+{% endif %}
+
+{% endfor %}
+
+{% endblock %}

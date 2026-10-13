@@ -1,0 +1,463 @@
+
+/* ==========================================
+   CAMPUSGEAR - BROWSE EQUIPMENT
+========================================== */
+
+.browse-page,
+.browse-page * {
+    box-sizing: border-box;
+}
+
+.browse-page {
+    width: 100%;
+    max-width: 1450px;
+    margin: 0 auto;
+}
+
+/* PAGE HEADER */
+
+.browse-header {
+    margin-bottom: 20px;
+}
+
+.browse-header h1 {
+    margin: 0 0 7px;
+    font-size: 25px;
+    font-weight: 700;
+    color: #171717;
+}
+
+.browse-header p {
+    margin: 0;
+    font-size: 13px;
+    color: #89909E;
+}
+
+/* FILTERS */
+
+.browse-filters {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 14px;
+    margin-bottom: 25px;
+}
+
+.browse-search {
+    position: relative;
+    width: 310px;
+    max-width: 100%;
+}
+
+.browse-search .icon {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 17px;
+    color: #98A2B3;
+    pointer-events: none;
+}
+
+.browse-search input {
+    width: 100%;
+    height: 43px;
+    padding: 11px 42px 11px 13px;
+
+    background: #FFFFFF;
+    border: 1px solid #E0E5EC;
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: 12px;
+    color: #344054;
+}
+
+.browse-search input::placeholder {
+    color: #98A2B3;
+}
+
+.browse-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.browse-filter-group label {
+    font-size: 12px;
+    color: #475467;
+}
+
+.browse-filter-group select {
+    min-width: 145px;
+    height: 43px;
+    padding: 10px 12px;
+
+    background: #FFFFFF;
+    border: 1px solid #E0E5EC;
+    border-radius: 9px;
+
+    font: inherit;
+    font-size: 12px;
+    color: #344054;
+    cursor: pointer;
+}
+
+.browse-search input:focus,
+.browse-filter-group select:focus {
+    outline: none;
+    border-color: #507DEA;
+    box-shadow: 0 0 0 3px #EAF0FF;
+}
+
+.browse-apply-btn,
+.browse-reset-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 43px;
+    padding: 0 18px;
+
+    border-radius: 8px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.browse-apply-btn {
+    background: #245ED6;
+    border: 1px solid #245ED6;
+    color: #FFFFFF;
+}
+
+.browse-apply-btn:hover {
+    background: #174BB6;
+}
+
+.browse-reset-btn {
+    background: #FFFFFF;
+    border: 1px solid #DEE5EF;
+    color: #667085;
+}
+
+.browse-reset-btn:hover {
+    background: #F8FAFC;
+}
+
+/* EQUIPMENT GRID */
+
+.browse-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 22px;
+}
+
+/* EQUIPMENT CARD */
+
+.equipment-card {
+    min-width: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    background: #FFFFFF;
+    border: 1px solid #E7E9EF;
+    border-radius: 11px;
+    overflow: hidden;
+
+    box-shadow: 0 3px 5px rgba(15, 23, 42, 0.07);
+
+    transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.equipment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 7px 16px rgba(15, 23, 42, 0.09);
+}
+
+/* IMAGE CONTAINER */
+
+.equipment-image-container {
+    height: 180px;
+    width: 100%;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 17px;
+    background: #FFFFFF;
+}
+
+.equipment-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* IMAGE FALLBACK */
+
+.equipment-image-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+
+    width: 100%;
+    height: 100%;
+
+    background: #F8FAFC;
+    border-radius: 8px;
+    color: #98A2B3;
+}
+
+.equipment-image-placeholder .icon {
+    font-size: 32px;
+}
+
+.equipment-image-placeholder span {
+    font-size: 12px;
+}
+
+/* BODY */
+
+.equipment-card-body {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+
+    padding: 15px;
+}
+
+/* STOCK BADGE */
+
+.equipment-stock {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    gap: 8px;
+
+    padding: 6px 12px;
+    margin-bottom: 12px;
+
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.stock-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+}
+
+.in-stock {
+    color: #15803D;
+    background: #DCFCE7;
+}
+
+.in-stock .stock-dot {
+    background: #16A34A;
+}
+
+.out-of-stock {
+    color: #B42318;
+    background: #FEE4E2;
+}
+
+.out-of-stock .stock-dot {
+    background: #DC2626;
+}
+
+/* EQUIPMENT TEXT */
+
+.equipment-name {
+    margin: 0 0 5px;
+    font-size: 15px;
+    font-weight: 700;
+    color: #171717;
+}
+
+.equipment-category {
+    margin: 0 0 9px;
+    font-size: 11px;
+    color: #667085;
+}
+
+.equipment-description {
+    margin: 0 0 17px;
+    font-size: 12px;
+    line-height: 1.6;
+    color: #9298A3;
+}
+
+/* AVAILABILITY */
+
+.equipment-availability {
+    margin-top: auto;
+    margin-bottom: 14px;
+}
+
+.availability-track {
+    width: 100%;
+    height: 7px;
+    background: #E5E7EB;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.availability-fill {
+    height: 100%;
+    background: #16A34A;
+    border-radius: 20px;
+}
+
+.availability-labels {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+
+    margin-top: 9px;
+}
+
+.availability-labels span {
+    font-size: 11px;
+    color: #475467;
+}
+
+/* REQUEST BUTTON */
+
+.equipment-request-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 13px;
+
+    background: #0849DE;
+    border: 1px solid #0849DE;
+    border-radius: 8px;
+
+    color: #FFFFFF;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    cursor: pointer;
+
+    transition: background 0.2s ease;
+}
+
+.equipment-request-btn:hover {
+    background: #0539B5;
+    color: #FFFFFF;
+}
+
+.equipment-request-btn.disabled {
+    background: #E9EDF3;
+    border-color: #E9EDF3;
+    color: #98A2B3;
+    cursor: not-allowed;
+}
+
+/* EMPTY STATE */
+
+.browse-empty-state {
+    grid-column: 1 / -1;
+    padding: 65px 20px;
+
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 12px;
+
+    background: #FFFFFF;
+    border: 1px solid #E7E9EF;
+    border-radius: 11px;
+    text-align: center;
+}
+
+.browse-empty-state > .icon {
+    font-size: 36px;
+    color: #98A2B3;
+}
+
+.browse-empty-state h2 {
+    font-size: 17px;
+}
+
+.browse-empty-state p {
+    font-size: 13px;
+    color: #667085;
+}
+
+.browse-empty-state a {
+    color: #245ED6;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+/* RESULT COUNT */
+
+.browse-result-count {
+    margin-top: 20px;
+    font-size: 12px;
+    color: #98A2B3;
+}
+
+/* ==========================================
+   RESPONSIVE
+========================================== */
+
+@media (max-width: 1200px) {
+    .browse-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 650px) {
+    .browse-header h1 {
+        font-size: 22px;
+    }
+
+    .browse-filters {
+        align-items: stretch;
+    }
+
+    .browse-search {
+        width: 100%;
+    }
+
+    .browse-filter-group {
+        width: 100%;
+    }
+
+    .browse-filter-group select {
+        flex: 1;
+    }
+
+    .browse-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .equipment-image-container {
+        height: 200px;
+    }
+
+    .browse-apply-btn,
+    .browse-reset-btn {
+        flex: 1;
+    }
+}

@@ -1,0 +1,6 @@
+{# Empty state inside a table. usage: {% include 'components/empty_row.html' with colspan="6" title="No requests found." hint="Try another filter." %} #}
+<tr>
+    <td colspan="{{ colspan }}" class="ui-empty-cell">
+        {% include 'components/empty_state.html' %}
+    </td>
+</tr>
